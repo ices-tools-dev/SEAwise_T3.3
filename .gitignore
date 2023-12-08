@@ -47,3 +47,16 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# no figures synced
+*.pdf
+*.png
+*.jpeg
+
+# only FLStocks_in folder is synced
+data/*.Rdata
+
+# subsequent folders are not synced
+/model/
+/output/
+/report/
