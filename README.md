@@ -17,8 +17,11 @@ Files should be run in order: `source("data.R"); source("model.R"); source("outp
 ## Non-CRAN required packages
 
 ```{r}
-# Non-CRAN
 library(devtools)
+# Archived package on CRAN
+install_version("lmmlasso", version = "0.1-2", repos = "http://cran.us.r-project.org")
+
+# Non-CRAN
 # fork that handles multiple RE
 install_github("https://github.com/bbolker/lmmen")
 # fork that handles multiple RE
