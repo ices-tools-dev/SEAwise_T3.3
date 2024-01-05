@@ -11,31 +11,46 @@ load("data/lutLWcoefs.Rdata")
 # 2. required functions ---------------------------------------------------
 
 source("R/laaGrowth.R") # function to fit length increment growth models
-source("R/growmod_selfun.R")
-
 
 # 3. set-up ------------------------------------------------------------------
 
-maxNForecastYear <- 15 # max number of years to forcast
+maxNForecastYear <- 15 # max number of years to forecast
 nTry <- 20 # for use in laaGrowth models
 
 nYearsNaive <- 3 # number of data years to use for naive model fitting
       
 # scenarios / models
-scen <- data.frame(name = c("naive", "laaGrowth"))#, "lasso_BIC", 
-  # "lasso_CV10perc",  "lasso_CV20perc", "growmod_BIC"))
+scen <- data.frame(name = c("naive", "laaGrowth", "lasso_BIC", 
+   "lasso_CV10perc",  "lasso_CV20perc", "glmmTMB_AICc"))
 
-# glmmLasso inputs
-fullform <- logw2~logw + age+I(age^2)+I(age^3) + nao.s + ssb.s + sst.s + 
-    logw:age +logw:I(age^2)+ logw:I(age^3) + logw:nao.s + logw:ssb.s + logw:sst.s
+# LMM inputs
+#global model of weight-at-age without random effects
+fullform <- logw2~logw + age+I(age^2)+I(age^3) + sal.s + ssb.s + temp.s +I(temp.s^2) + 
+  logw:age +  logw:sal.s + logw:ssb.s + logw:temp.s
 
+#global model of weight-at-age with random effects
+fullformRE <- logw2~logw + age+I(age^2)+I(age^3) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
+  logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
+
+#global model of recruit weights 
+fullform.rec <- logw ~ sal.s + ssb.s + temp.s + I(temp.s^2) 
+
+#range of penalty terms to try in LASSO methods
 lambdas <-  seq(50, 0, by = -0.5)
+
+#set up cluster 
+ncores <- detectCores() # max available cores
+clusterType <- ifelse(Sys.info()["sysname"] == "Windows", "PSOCK", "FORK")
+mycl <- parallel::makeCluster(ncores, type=clusterType)  
+doParallel::registerDoParallel(mycl)
+invisible(clusterEvalQ(mycl, library(glmmTMB , logical = TRUE)))
 
 # stk - stock loop START --------------------------------------------------------
 
 STKs <- names(DF)[-1]
 for(stk in STKs){
   # stk <- "cod.27.7a"
+  #print(stk)
   dat <- DF[[stk]]
   
   dat$covar1 <- dat$ssb # for use in laaGrowth models
@@ -44,6 +59,9 @@ for(stk in STKs){
     ssb.s=scale(ssb), sal.s=scale(sal), temp.s=scale(temp),
     yearf=factor(year), cohortf=factor(cohort))
   
+  #need to make sure environmental variables are available
+  dat <- na.omit(dat)
+
   ranYear <- range(dat$year)
   minage <- min(dat$age, na.rm = TRUE)
 
@@ -86,54 +104,79 @@ for(stk in STKs){
       
       # lasso_BIC -----
       if(scen$name[s] == "lasso_BIC"){ 
-        gFit <- lmmen::cv.glmmLasso(form.fixed=fullform, 
-          form.rnd = list(yearf=~1, cohortf=~1), 
-          dat=dat.train, 
-          lambda = lambdas)$fit.opt
+        gFit <- try(lmmen::cv.glmmLasso(form.fixed=fullform, 
+                                    form.rnd = list(yearf=~1, cohortf=~1), 
+                                    dat=dat.train, 
+                                    lambda = lambdas)$fit.opt)
+        if(inherits(gFit, "try-error")){
+          cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
+        }
         gFit$name <- scen$name[s]
+        tmp <- subset(dat.train, age==minage)
+        global.model <- glmmTMB(fullform.rec,
+                                data=tmp, na.action = na.fail)
+        clusterExport(mycl, "tmp")
+        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
+        minage.i <- get.models(dma, subset= 1)[[1]]
       }
       
       # lasso_CV10perc -----
       if(scen$name[s] == "lasso_CV10perc"){ 
-        gFit <- cv.glmmLasso::cv.glmmLasso(fix=fullform, 
-          rnd = list(yearf=~1, cohortf=~1), 
-          data=dat.train, 
-          family = gaussian(link = "identity"), kfold = 10, 
-          lambdas =  lambdas)$glmmLasso.final
+        gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=fullform, 
+                                           rnd = list(yearf=~1, cohortf=~1), 
+                                           data=dat.train, 
+                                           family = gaussian(link = "identity"), 
+                                           kfold = 10, 
+                                           lambdas =  lambdas)$glmmLasso.final)
+        if(inherits(gFit, "try-error")){
+          cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
+        }
+        
         gFit$name <- scen$name[s]
+        tmp <- subset(dat.train, age==minage)
+        global.model <- glmmTMB(fullform.rec,
+                                data=tmp, na.action = na.fail)
+        clusterExport(mycl, "tmp")
+        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
+        minage.i <- get.models(dma, subset= 1)[[1]]
       }
       
       # lasso_CV20perc -----
       if(scen$name[s] == "lasso_CV20perc"){ 
-        gFit <- cv.glmmLasso::cv.glmmLasso(fix=fullform, 
-          rnd = list(yearf=~1, cohortf=~1), 
-          data=dat.train, 
-          family = gaussian(link = "identity"), kfold = 5, 
-          lambdas =  lambdas)$glmmLasso.final
-        gFit$name <- scen$name[s]
-      }
-      
-      # growmod_BIC -----
-      if(scen$name[s] == "growmod_BIC"){ 
-        # variables growmod needs
-        tmp <- transform(dat.train, size=log(w2), prevsize=log(w), 
-          t=year, ID=cohort, t0=cohort+minage) 
-        tmp <- subset(tmp, t0>=min(tmp$year))
-        
-        # Fit all models in parallel 
-        mods.s <- foreach(i=1:nrow(forms2.s), .combine=rbind) %dopar% { 
-          source("R/growmod_selfun.R")
-          growmod_BIC(tmp, i)
+        gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=fullform, 
+                                           rnd = list(yearf=~1, cohortf=~1), 
+                                           data=dat.train, 
+                                           family = gaussian(link = "identity"), 
+                                           kfold = 5, 
+                                           lambdas =  lambdas)$glmmLasso.final)
+        if(inherits(gFit, "try-error")){
+          cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
         }
-          
-        # Best model
-        gFit <- with(forms2.s[which.min(mods.s),], growmod(formulaX =as.formula(formulaX[[1]]), 
-          formulaM =as.formula(formulaM[[1]]), 
-          data=tmp))
-
-        gFit$name <- scen$name[s]
-      } 
         
+        gFit$name <- scen$name[s]
+        tmp <- subset(dat.train, age==minage)
+        global.model <- glmmTMB(fullform.rec,
+                                data=tmp, na.action = na.fail)
+        clusterExport(mycl, "tmp")
+        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
+        minage.i <- get.models(dma, subset= 1)[[1]]
+      }
+      # glmmTMB_AICc -----
+      if(scen$name[s] == "glmmTMB_AICc"){ 
+        global.model1 <- glmmTMB(fullformRE,
+                                 data=dat.train, na.action = na.fail)
+        clusterExport(mycl, "dat.train")
+        dma1 <- dredge(global.model1, rank = "AICc", cluster = mycl)
+        gFit <- get.models(dma1, subset= 1)[[1]]
+        gFit$name <- scen$name[s]
+        
+        tmp <- subset(dat.train, age==minage)
+        global.model <- glmmTMB(fullform.rec,
+                                data=tmp, na.action = na.fail)
+        clusterExport(mycl, "tmp")
+        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
+        minage.i <- get.models(dma, subset= 1)[[1]]
+      }      
 
       # 5. model forecast -----------------------------------------------------
       
@@ -181,25 +224,31 @@ for(stk in STKs){
             dat.valid.y$w2 <- (LWab$a*dat.valid.y$l2^LWab$b)/1000
             dat.valid$w2[hit.y] <- dat.valid.y$w2 # pass predictions back to main dat.valid
           }
-          if(scen$name[s] == "growmod_BIC"){
+          if(scen$name[s] %in% c("lasso_BIC", "lasso_CV10perc", "lasso_CV20perc")){
+            dat.valid.y$cohortf <- NA #do not use RE to make a more fair comparison with other methods
             dat.valid.y$l2 <- NA
             dat.valid$l2[hit.y] <- dat.valid.y$l2 # pass predictions back to main dat.valid
-            tmp <- dat.valid.y
-            tmp$prevsize <- log(tmp$w) #predict.growmod needs "prevsize"
-            dat.valid.y$w2 <- predict(gFit, tmp, exp=TRUE) # predict on real scale
-            dat.valid$w2[hit.y] <- dat.valid.y$w2 # pass predictions back to main dat.valid
-            #add log scale in case it's needed later
-            dat.valid.y$logw2 <- log(dat.valid.y$w2)
+            dat.valid.y$logw2 <- -1000 #bug where it won't predict if there's an NA here
+            if(!inherits(gFit, "try-error")){
+              dat.valid.y$logw2 <- predict(gFit, newdata = dat.valid.y) # predict size2
+            }else{
+              dat.valid.y$logw2 <- NA
+            }
             dat.valid$logw2[hit.y] <- dat.valid.y$logw2 # pass predictions back to main dat.valid
+            #predict on real scale with all 3 variance components included
+            tot.var <- gFit$phi + sum(unlist(gFit$StdDev)^2) #phi is residual variance
+            dat.valid.y$w2 <- exp(dat.valid.y$logw2 + tot.var/2) #lognormal mean
+            dat.valid$w2[hit.y] <- dat.valid.y$w2 # pass predictions back to main dat.valid
           }
-          if(scen$name[s] %in% c("lasso_BIC", "lasso_CV10perc", "lasso_CV20perc")){
+          if(scen$name[s] %in% c("glmmTMB_AICc", "glmmTMB_BIC")){
+            dat.valid.y$cohortf <- NA #do not use RE to make a more fair comparison with other methods
             dat.valid.y$l2 <- NA
             dat.valid$l2[hit.y] <- dat.valid.y$l2 # pass predictions back to main dat.valid
             dat.valid.y$logw2 <- -1000 #bug where it won't predict if there's an NA here
             dat.valid.y$logw2 <- predict(gFit, newdata = dat.valid.y) # predict size2
             dat.valid$logw2[hit.y] <- dat.valid.y$logw2 # pass predictions back to main dat.valid
             #predict on real scale with all 3 variance components included
-            tot.var <- gFit$phi + sum(unlist(gFit$StdDev)^2) #phi is residual variance
+            tot.var <- as.numeric(VarCorr(gFit)$cond$cohortf+VarCorr(gFit)$cond$yearf+attr(VarCorr(gFit)$cond,"sc")^2)
             dat.valid.y$w2 <- exp(dat.valid.y$logw2 + tot.var/2) #lognormal mean
             dat.valid$w2[hit.y] <- dat.valid.y$w2 # pass predictions back to main dat.valid
           }
@@ -222,7 +271,7 @@ for(stk in STKs){
               dat.valid.yplus1$w[recruits] <- predict(object = nFitW, newdata = dat.valid.yplus1[recruits,])
               dat.valid$l[hit.yplus1] <- dat.valid.yplus1$l # pass predictions back to main dat.valid
               dat.valid$w[hit.yplus1] <- dat.valid.yplus1$w
-            } else { #scen$name[s] %in% c("lasso_BIC", "lasso_CV10perc", "lasso_CV20perc", "growmod_BIC")
+            } else { #scen$name[s] %in% c("lasso_BIC", "lasso_CV10perc", "lasso_CV20perc", "glmmTMB_AICc")
               dat.valid.yplus1$logw[recruits] <- predict(object = minage.i, newdata = dat.valid.yplus1[recruits,])
               dat.valid$logw[hit.yplus1] <- dat.valid.yplus1$logw # pass predictions back to main dat.valid
               
@@ -242,7 +291,7 @@ for(stk in STKs){
       } # end of forecast procedure for non-naive models
       
       res[[i]] <- dat.valid
-      print(i) 
+      print(i)
     
     } # i - moving window loop END -----
     
@@ -279,5 +328,6 @@ for(stk in STKs){
 
 } # stk - stock loop END -----
 
+stopCluster(mycl) # stops cluster
 
 
