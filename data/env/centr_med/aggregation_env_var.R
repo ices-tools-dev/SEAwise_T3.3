@@ -61,7 +61,7 @@ saveRDS(env_var_HKE19,"env_var_HKE19.RDS")
 
 
 # MUT 19
-ENV2=ENV[ENV$GSA==19 & ENV$strata %in% c("50-100","100-200","0-50"),]
+ENV2=ENV[ENV$gsa==19 & ENV$strata %in% c("50-100","100-200","10-50"),]
 
 env_var_MUT19 <- ENV2 %>% group_by(YEAR) %>% summarise(sst=mean(sst,na.rm=TRUE),botT=mean(botT,na.rm=TRUE),so=mean(so,na.rm=TRUE),botso=mean(botso,na.rm=TRUE),nppv=mean(nppv,na.rm=TRUE))
 
@@ -69,7 +69,7 @@ saveRDS(env_var_MUT19,"env_var_MUT19.RDS")
 
 
 # ARS 18-19-20
-ENV2=ENV[ENV$GSA %in% c(18,19,20) & ENV$strata %in% c("200-500","500-800"),]
+ENV2=ENV[ENV$gsa %in% c(18,19,20) & ENV$strata %in% c("200-500","500-800"),]
 
 env_var_ARSARA181920 <- ENV2 %>% group_by(YEAR) %>% summarise(sst=mean(sst,na.rm=TRUE),botT=mean(botT,na.rm=TRUE),so=mean(so,na.rm=TRUE),botso=mean(botso,na.rm=TRUE),nppv=mean(nppv,na.rm=TRUE))
 
