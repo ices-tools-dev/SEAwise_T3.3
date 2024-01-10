@@ -9,8 +9,8 @@ load(file = "data/FLStocks_list_stks.Rdata")
 load(file = "data/lutYearAge.Rdata")
 load(file = "data/lutLWcoefs.Rdata")
 
-envTemp <- readRDS("./data/env/ORAS5_AnnualTEMPByDemPelStock2.RDS")
-envSal <- readRDS("./data/env/ORAS5_AnnualSALByDemPelStock2.RDS")
+envTemp <- readRDS("./data/env/ORAS5_AnnualTEMPByDemPelStock3.RDS")
+envSal <- readRDS("./data/env/ORAS5_AnnualSALByDemPelStock3.RDS")
 
 # # temporary fix !!!
 # envTemp$sol.27.7e <- envTemp$sol.27.7fg
