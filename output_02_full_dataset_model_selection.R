@@ -11,8 +11,8 @@ modeledSTKs <- names(DF)
 allSTKs <- list(
   "NS" = c("cod.27.47d20","ple.27.420", "had.27.46a20", "whg.27.47d","pok.27.3a46","sol.27.4", "her.27.3a47d"),
   "IS" = c("cod.27.7a", "had.27.7a", "ple.27.7a", "sol.27.7a", "whg.27.7a"),
-  "CS" = c("ank.27.78abd", "cod.27.7e-k", "had.27.7b-k", "hke.27.3a46-8abd", "meg.27.7b-k8abd", "mon.27.78abd","sol.27.7fg","sol.27.7a", "whg.27.7b-ce-k"),
-#  "Baltic"= c("cod.27.24-32", "her.27.28", "sol.27.20-24", "cod.27.22-24", "her.27.25-2932", "spr.27.22-32", "ple.27.21-23"),
+  "CS" = c("ank.27.78abd", "cod.27.7e-k", "had.27.7b-k", "hke.27.3a46-8abd", "meg.27.7b-k8abd", "mon.27.78abd","sol.27.7fg","sol.27.7e", "whg.27.7b-ce-k"),
+  "Baltic"= c("cod.27.22-24","her.27.25-2932", "her.27.28", "her.27.3031","sol.27.20-24",  "spr.27.22-32"),
   "Biscay"= c("ane.27.8", "hke.27.3a46-8abd", "hke.27.8c9a", "mon.27.78abd","bss.27.8ab", "pil.27.8abd","pil.27.8c9a" )
 )
 
@@ -51,8 +51,10 @@ for(area in names(allSTKs)){
   tmp <- mods3[,c("stock","scen","sal", "SSB", "temp", "temp^2", "sal:logw", "SSB:logw", "temp:logw")]
   mods4 <- reshape2::melt(tmp, id.vars=1:2)
   mods4 <- transform(mods4, scen=factor(scen), stock=factor(stock))
+  mods5 <- mods4
+  mods5$value[mods5$value==0]=NA
   
-  ggplot(mods4, aes(y=scen, x=value))+
+  ggplot(mods5, aes(y=scen, x=value))+
     geom_point(position = position_dodge(width=.75))+theme_bw()+
     facet_grid(stock~variable)+
     xlab(NULL)+ylab(NULL)+
@@ -86,8 +88,10 @@ for(area in names(allSTKs)){
   tmp <- mods3[,c("stock","sal", "SSB", "temp", "temp^2")]
   mods4 <- reshape2::melt(tmp, id.vars=1)
   mods4 <- transform(mods4,  stock=factor(stock))
+  mods5 <- mods4
+  mods5$value[mods5$value==0]=NA
   
-  ggplot(mods4, aes(y=stock, x=value))+
+  ggplot(mods5, aes(y=stock, x=value))+
     geom_point(position = position_dodge(width=.75))+theme_bw()+
     facet_grid(variable~.)+
     xlab(NULL)+ylab(NULL)+
