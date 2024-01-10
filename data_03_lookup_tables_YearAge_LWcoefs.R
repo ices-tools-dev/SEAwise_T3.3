@@ -81,6 +81,7 @@ lutSpp <- rbind(
   data.frame(stockcode = "her.27.3a47d", genusSpecies = "Clupea harengus"),
   data.frame(stockcode = "her.27.28", genusSpecies = "Clupea harengus"),
   data.frame(stockcode = "her.27.25-2932", genusSpecies = "Clupea harengus"),
+  data.frame(stockcode = "her.27.3031", genusSpecies = "Clupea harengus"),
   data.frame(stockcode = "meg.27.7b-k8abd", genusSpecies = "Lepidorhombus whiffiagonis"),
   data.frame(stockcode = "pil.27.8abd", genusSpecies = "Sardina pilchardus"),
   data.frame(stockcode = "pil.27.8c9a", genusSpecies = "Sardina pilchardus"),
