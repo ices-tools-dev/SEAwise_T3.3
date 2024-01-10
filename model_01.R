@@ -21,7 +21,7 @@ nYearsNaive <- 3 # number of data years to use for naive model fitting
       
 # scenarios / models
 scen <- data.frame(name = c("naive", "laaGrowth", "lasso_BIC", 
-   "lasso_CV10perc",  "lasso_CV20perc", "glmmTMB_AICc"))
+  "lasso_CV10perc",  "lasso_CV20perc", "glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
 
 # LMM inputs
 #global model of weight-at-age without random effects
@@ -32,8 +32,13 @@ fullform <- logw2~logw + age+I(age^2)+I(age^3) + sal.s + ssb.s + temp.s +I(temp.
 fullformRE <- logw2~logw + age+I(age^2)+I(age^3) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
   logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
 
+#global model of weight-at-age GAMM
+fullformGAMM <- logw2~logw + s(age, k=3) + sal.s  + ssb.s + s(temp.s, k=3)  + 
+	logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
+
 #global model of recruit weights 
 fullform.rec <- logw ~ sal.s + ssb.s + temp.s + I(temp.s^2) 
+fullformGAM.rec <- logw ~ sal.s + ssb.s + s(temp.s, k=3) 
 
 #range of penalty terms to try in LASSO methods
 lambdas <-  seq(50, 0, by = -0.5)
@@ -48,9 +53,9 @@ invisible(clusterEvalQ(mycl, library(glmmTMB , logical = TRUE)))
 # stk - stock loop START --------------------------------------------------------
 
 STKs <- names(DF)[-1]
-for(stk in STKs){
+for(stk in STKs[1:length(STKs)]){
   # stk <- "cod.27.7a"
-  #print(stk)
+  print(paste0("Starting ", stk))
   dat <- DF[[stk]]
   
   dat$covar1 <- dat$ssb # for use in laaGrowth models
@@ -110,14 +115,13 @@ for(stk in STKs){
                                     lambda = lambdas)$fit.opt)
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }
-        gFit$name <- scen$name[s]
+        }else
+          
         tmp <- subset(dat.train, age==minage)
-        global.model <- glmmTMB(fullform.rec,
-                                data=tmp, na.action = na.fail)
+        global.model <- try(glmmTMB(fullform.rec,
+                                    data=tmp, na.action = na.fail))
         clusterExport(mycl, "tmp")
-        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
-        minage.i <- get.models(dma, subset= 1)[[1]]
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }
       
       # lasso_CV10perc -----
@@ -130,15 +134,13 @@ for(stk in STKs){
                                            lambdas =  lambdas)$glmmLasso.final)
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }
-        
-        gFit$name <- scen$name[s]
+        }else
+          
         tmp <- subset(dat.train, age==minage)
-        global.model <- glmmTMB(fullform.rec,
-                                data=tmp, na.action = na.fail)
+        global.model <- try(glmmTMB(fullform.rec,
+                                    data=tmp, na.action = na.fail))
         clusterExport(mycl, "tmp")
-        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
-        minage.i <- get.models(dma, subset= 1)[[1]]
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }
       
       # lasso_CV20perc -----
@@ -151,33 +153,49 @@ for(stk in STKs){
                                            lambdas =  lambdas)$glmmLasso.final)
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }
-        
-        gFit$name <- scen$name[s]
+        }else
+          
         tmp <- subset(dat.train, age==minage)
-        global.model <- glmmTMB(fullform.rec,
-                                data=tmp, na.action = na.fail)
+        global.model <- try(glmmTMB(fullform.rec,
+                                    data=tmp, na.action = na.fail))
         clusterExport(mycl, "tmp")
-        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
-        minage.i <- get.models(dma, subset= 1)[[1]]
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }
       # glmmTMB_AICc -----
       if(scen$name[s] == "glmmTMB_AICc"){ 
-        global.model1 <- glmmTMB(fullformRE,
-                                 data=dat.train, na.action = na.fail)
+        global.model1 <- try(glmmTMB(fullformRE,
+                                 data=dat.train, na.action = na.fail))
         clusterExport(mycl, "dat.train")
-        dma1 <- dredge(global.model1, rank = "AICc", cluster = mycl)
-        gFit <- get.models(dma1, subset= 1)[[1]]
-        gFit$name <- scen$name[s]
+        gFit <- try(get.models(dredge(global.model1, rank = "AICc", cluster = mycl), subset= 1)[[1]])
+
+        if(inherits(gFit, "try-error")){
+          cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
+        }else
         
         tmp <- subset(dat.train, age==minage)
-        global.model <- glmmTMB(fullform.rec,
-                                data=tmp, na.action = na.fail)
+        global.model <- try(glmmTMB(fullform.rec,
+                                data=tmp, na.action = na.fail))
         clusterExport(mycl, "tmp")
-        dma <- dredge(global.model, rank = "AICc", cluster = mycl)
-        minage.i <- get.models(dma, subset= 1)[[1]]
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }      
-
+      # glmmTMB_GAMM_AICc -----
+      if(scen$name[s] == "glmmTMB_GAMM_AICc"){ 
+        global.model1 <- try(glmmTMB(fullformGAMM,
+      													 data=dat.train, na.action = "na.fail"))
+      	clusterExport(mycl, "dat.train")
+      	gFit <- try(get.models(dredge(global.model1, rank = "AICc", cluster = mycl), subset= 1)[[1]])
+      	
+      	if(inherits(gFit, "try-error")){
+      	  cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
+      	}
+      	
+      	tmp <- subset(dat.train, age==minage)
+      	global.model <- try(glmmTMB(fullformGAM.rec,
+      	                            data=tmp, na.action = na.fail))
+      	clusterExport(mycl, "tmp")
+      	minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
+      }      
+      
       # 5. model forecast -----------------------------------------------------
       
       # set-up -----
@@ -231,24 +249,30 @@ for(stk in STKs){
             dat.valid.y$logw2 <- -1000 #bug where it won't predict if there's an NA here
             if(!inherits(gFit, "try-error")){
               dat.valid.y$logw2 <- predict(gFit, newdata = dat.valid.y) # predict size2
+              tot.var <- gFit$phi + sum(unlist(gFit$StdDev)^2) #phi is residual variance
             }else{
               dat.valid.y$logw2 <- NA
+              tot.var <- NA
             }
             dat.valid$logw2[hit.y] <- dat.valid.y$logw2 # pass predictions back to main dat.valid
             #predict on real scale with all 3 variance components included
-            tot.var <- gFit$phi + sum(unlist(gFit$StdDev)^2) #phi is residual variance
             dat.valid.y$w2 <- exp(dat.valid.y$logw2 + tot.var/2) #lognormal mean
             dat.valid$w2[hit.y] <- dat.valid.y$w2 # pass predictions back to main dat.valid
           }
-          if(scen$name[s] %in% c("glmmTMB_AICc", "glmmTMB_BIC")){
+          if(scen$name[s] %in% c("glmmTMB_AICc", "glmmTMB_BIC", "glmmTMB_GAMM_AICc")){
             dat.valid.y$cohortf <- NA #do not use RE to make a more fair comparison with other methods
             dat.valid.y$l2 <- NA
             dat.valid$l2[hit.y] <- dat.valid.y$l2 # pass predictions back to main dat.valid
             dat.valid.y$logw2 <- -1000 #bug where it won't predict if there's an NA here
-            dat.valid.y$logw2 <- predict(gFit, newdata = dat.valid.y) # predict size2
+            if(!inherits(gFit, "try-error")){
+              dat.valid.y$logw2 <- predict(gFit, newdata = dat.valid.y, allow.new.levels=TRUE) # predict size2
+              tot.var <- as.numeric(VarCorr(gFit)$cond$cohortf+VarCorr(gFit)$cond$yearf+attr(VarCorr(gFit)$cond,"sc")^2)
+            }else{
+              dat.valid.y$logw2 <- NA
+              tot.var <- NA
+            }
             dat.valid$logw2[hit.y] <- dat.valid.y$logw2 # pass predictions back to main dat.valid
             #predict on real scale with all 3 variance components included
-            tot.var <- as.numeric(VarCorr(gFit)$cond$cohortf+VarCorr(gFit)$cond$yearf+attr(VarCorr(gFit)$cond,"sc")^2)
             dat.valid.y$w2 <- exp(dat.valid.y$logw2 + tot.var/2) #lognormal mean
             dat.valid$w2[hit.y] <- dat.valid.y$w2 # pass predictions back to main dat.valid
           }
@@ -272,11 +296,15 @@ for(stk in STKs){
               dat.valid$l[hit.yplus1] <- dat.valid.yplus1$l # pass predictions back to main dat.valid
               dat.valid$w[hit.yplus1] <- dat.valid.yplus1$w
             } else { #scen$name[s] %in% c("lasso_BIC", "lasso_CV10perc", "lasso_CV20perc", "glmmTMB_AICc")
-              dat.valid.yplus1$logw[recruits] <- predict(object = minage.i, newdata = dat.valid.yplus1[recruits,])
+              if(!inherits(minage.i, "try-error")){
+                dat.valid.yplus1$logw[recruits] <- predict(object = minage.i, newdata = dat.valid.yplus1[recruits,])
+                tot.var <- summary(minage.i)$sigma^2 #sigma is residual standard deviation
+              }else{
+                dat.valid.yplus1$logw[recruits] <- NA
+                tot.var <- NA
+              }
               dat.valid$logw[hit.yplus1] <- dat.valid.yplus1$logw # pass predictions back to main dat.valid
-              
               #predict on real scale with variance components included
-              tot.var <- summary(minage.i)$sigma^2 #sigma is residual standard deviation
               dat.valid$w[hit.yplus1] <- exp(dat.valid$logw[hit.yplus1] + tot.var/2) #lognormal expectation
             }
             
@@ -286,7 +314,7 @@ for(stk in STKs){
   
         dat.valid$fcYear <- dat.valid$year - maxDataYear # number of forecast years from last traing year
         dat.valid$nFitYear <- length(unique(dat.train$year)) # number of training years
-        dat.valid$best <- gFit$name # record the name of the model / formula
+        dat.valid$best <-  NA # record the name of the method, just to fill the space
         
       } # end of forecast procedure for non-naive models
       
@@ -312,7 +340,7 @@ for(stk in STKs){
   # calc. error 
   res$rerr <- res$w2 / res$w2.orig
   res$err <- res$w2 - res$w2.orig
-  unique(subset(res, mod == "laaGrowth")[,c("nFitYear", "best")])
+#  unique(subset(res, mod == "laaGrowth")[,c("nFitYear", "best")])
   
   # define forecast classes (short, medium, or long)
   res$fcClass <- cut(res$fcYear, breaks = c(0,3,6,Inf), 
