@@ -21,6 +21,9 @@ library(devtools)
 # Archived package on CRAN
 install_version("lmmlasso", version = "0.1-2", repos = "http://cran.us.r-project.org")
 
+# Development version needed for GAMMs
+remotes::install_github("glmmTMB/glmmTMB/glmmTMB")
+
 # Non-CRAN
 # fork that handles multiple RE
 install_github("https://github.com/bbolker/lmmen")
