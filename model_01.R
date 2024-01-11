@@ -115,7 +115,7 @@ for(stk in STKs[1:length(STKs)]){
                                     lambda = lambdas)$fit.opt)
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }else
+        }
           
         tmp <- subset(dat.train, age==minage)
         global.model <- try(glmmTMB(fullform.rec,
@@ -134,7 +134,7 @@ for(stk in STKs[1:length(STKs)]){
                                            lambdas =  lambdas)$glmmLasso.final)
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }else
+        }
           
         tmp <- subset(dat.train, age==minage)
         global.model <- try(glmmTMB(fullform.rec,
@@ -153,7 +153,7 @@ for(stk in STKs[1:length(STKs)]){
                                            lambdas =  lambdas)$glmmLasso.final)
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }else
+        }
           
         tmp <- subset(dat.train, age==minage)
         global.model <- try(glmmTMB(fullform.rec,
@@ -170,7 +170,7 @@ for(stk in STKs[1:length(STKs)]){
 
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
-        }else
+        }
         
         tmp <- subset(dat.train, age==minage)
         global.model <- try(glmmTMB(fullform.rec,
