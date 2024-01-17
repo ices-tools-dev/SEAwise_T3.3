@@ -60,3 +60,6 @@ data/*.Rdata
 /model/
 /output/
 /report/
+
+# temporary folder
+/tmp

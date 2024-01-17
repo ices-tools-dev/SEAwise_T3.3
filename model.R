@@ -18,7 +18,8 @@ library(lmmlasso)
 library(lmmen) # fork that handles multiple RE
 library(cv.glmmLasso) # fork that handles multiple RE
 library(doParallel)
-
+library(glmmTMB)
+library(MuMIn)
 
 # source model scripts ----------------------------------------------------------
 source("model_01.R")
