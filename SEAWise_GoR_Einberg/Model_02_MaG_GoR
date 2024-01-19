@@ -1,0 +1,165 @@
+#Remove unneeded data
+rm(list=ls())
+
+#Open file "GoR_growth_2024.RData"
+
+#Data file: w
+#Year 1960-2020; SSB (spawning stock biomass, thousand tons), R - age-1 herring abundance (recruitment)
+#One-five. WAA of 1-5 year old herring (g)
+#x, x1-x4. Mean annual growth (g) of 2-5 year old fish. X1 mean annual growth of ear-old fish, x2 3-year-old fish and so on. 
+#Ws - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
+and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
+#Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
+#e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
+#e_N - E. affinis affinis mean abundance in May (copepod nauplii); e2_N - in August. 0 indicates previous year data (shifted by one year). 
+
+idx=which(w$year %in% c(1961:2020))
+dat=w[idx,]
+
+library(dplyr)
+library(nlme)
+library(mgcv)
+
+#Mean annual growth (MaG) age-2 (x1), age-3 (x2), age-4 (x3), age-5 (x4)
+######################Tested GAM with froward selection, age-2 (x1) Step 1; repeate this with all MaG (x1-x4) 
+summary(gam(x1 ~ s(sum, k = 4), data = dat)) #replace two with other WAA accordingly
+summary(gam(x1 ~ s(sum0, k = 4), data = dat))
+summary(gam(x1 ~ s(ws, k = 4), data = dat))
+summary(gam(x1 ~ s(ws0, k = 4), data = dat))
+
+summary(gam(x1 ~ s(SSB, k = 4), data = dat))
+summary(gam(x1 ~ s(SSB0, k = 4), data = dat))
+
+summary(gam(x1 ~ s(t_aug, k = 4), data = dat))
+summary(gam(x1 ~ s(t_aug0, k = 4), data = dat))
+
+summary(gam(x1 ~ s(e_N, k = 4), data = dat))
+summary(gam(x1 ~ s(e_N0, k = 4), data = dat))
+summary(gam(x1 ~ s(e_E1, k = 4), data = dat))
+summary(gam(x1 ~ s(e_E10, k = 4), data = dat))
+summary(gam(x1 ~ s(e_E2, k = 4), data = dat))
+summary(gam(x1 ~ s(e_E20, k = 4), data = dat))
+summary(gam(x1 ~ s(e_E3, k = 4), data = dat))
+summary(gam(x1 ~ s(e_E30, k = 4), data = dat))
+
+summary(gam(x1 ~ s(e2_N, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_N0, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_E1, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_E10, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_E2, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_E20, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_E3, k = 4), data = dat))
+summary(gam(x1 ~ s(e2_E30, k = 4), data = dat))
+ 
+summary(gam(x1 ~ s(l_N, k = 4), data = dat)) 
+summary(gam(x1 ~ s(l_N0, k = 4), data = dat))
+summary(gam(x1 ~ s(l_E1, k = 4), data = dat))
+summary(gam(x1 ~ s(l_E10, k = 4), data = dat))
+summary(gam(x1 ~ s(l_E2, k = 4), data = dat))
+summary(gam(x1 ~ s(l_E20, k = 4), data = dat))
+summary(gam(x1 ~ s(l_E3, k = 4), data = dat))
+summary(gam(x1 ~ s(l_E30, k = 4), data = dat))
+
+summary(gam(x1 ~ s(l2_N, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_N0, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_E1, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_E10, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_E2, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_E20, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_E3, k = 4), data = dat))
+summary(gam(x1 ~ s(l2_E30, k = 4), data = dat)) 
+
+summary(gam(x1 ~ s(ea_N, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_N0, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_E1, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_E10, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_E2, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_E20, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_E3, k = 4), data = dat))
+summary(gam(x1 ~ s(ea_E30, k = 4), data = dat))
+
+summary(gam(x1 ~ s(ea2_N, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_N0, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_E1, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_E10, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_E2, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_E20, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_E3, k = 4), data = dat))
+summary(gam(x1 ~ s(ea2_E30, k = 4), data = dat))
+
+######################################################
+#Step 1 model for age-2
+summary(gam(x1 ~ s(l2_E3, k = 4), data = dat)) #final model for step 1
+
+#Do gam.check with all the models (k-values)
+gam.check(gam(x1 ~ s(l2_E3, k = 4), data = dat))
+
+#Step 2 model for age-2 - test all variables again! 
+summary(gam(x1 ~ s(l2_E3, k = 4) + s(e_E20, k = 4), data = dat)) #final model for age-2
+
+#Step 3 model for age-2 - test all variables again! 
+summary(gam(x1 ~ s(l2_E3, k = 4) + s(e_E20, k = 4) + s(..., k = 4), data = dat))
+
+#######################################################
+#Do this again with x2, x3, x4
+
+#Final model for age-3 mean annual growth
+summary(gam(x2 ~ s(l_E1, k = 4) + s(SSB0, k = 4) + s(e_E30, k = 4), data = dat))
+
+#Final model for age-4 mean annual growth
+summary(gam(x3 ~ s(SSB0, k = 4) + s(e_E3, k = 4), data = dat))
+
+#Final model for age-5 mean annual growth
+summary(gam(x4 ~ s(ea_E20, k = 4) + s(SSB0, k = 4), data = dat))
+
+###################################################################################################
+#Divide data info time-periods
+#TS1 1961-1988
+#TS2 1989-2020
+
+idx=which(dat$year %in% c(1961:1988))
+dat1=dat[idx,]
+
+idx=which(dat$year %in% c(1989:2020))
+dat2=dat[idx,]
+
+######Repete all analysis with both time-periods using data = dat1 or data = dat 2
+#TS final models 
+
+###########################################
+
+#Final model for age-2 mean annual growth
+#TS1
+final = gam(x1 ~ s(l_N, k = 4) + s(e_E20, k = 5), data = dat1)
+
+#TS2
+final = gam(x1 ~ s(l2_E3, k = 4) + s(ea2_E2, k = 4) + s(ws0, k = 4), data = dat2)
+
+###########################################
+
+#Final model for age-3 mean annual growth
+#TS1
+final =gam(x2 ~ s(l_E1, k=4) + s(e_E30, k = 4), data = dat1)
+
+#TS2
+final = gam(x2 ~ s(SSB, k = 4) + s(e2_E30, k = 4) + s(l_E1, k = 4), data = dat2)
+
+###########################################
+
+#Final model for age-4 mean annual growth
+#TS1
+final = gam(x3 ~ s(l2_E30, k = 4) + s(e2_E1, k = 4), data = dat1)
+
+#TS2
+final = gam(x3 ~ s(e_E30, k = 4) + s(l_E1, k = 4)+ s(ws, k = 4), data = dat2)
+
+###########################################
+
+#Final model for age-5 mean annual growth
+#TS1
+final = gam(x4 ~ s(ea_E30, k = 4) + s(l_E20, k = 4), data = dat1)
+
+#TS2
+final = gam(x4 ~ s(e_E3, k = 4) + s(SSB0, k = 4), data = dat2)
+###########################################END OF CODE

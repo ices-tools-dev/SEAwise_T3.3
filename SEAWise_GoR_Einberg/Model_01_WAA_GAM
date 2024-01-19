@@ -1,0 +1,153 @@
+###Open file "GoR_WAA_2024.01.RData"
+
+#Data file: data
+#Year 1960-2020; 
+#Two-five. WAA of 2-5 year old herring (g) 
+#Ws - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
+and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
+#Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
+#e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
+#e_N - E. affinis affinis mean abundance in May (copepod nauplii); e2_N - in August. 
+#No nr - same year; 0 - indicates previous year data (shifted by one year); 1 - shifted one more year back; 2- shifted two years more back and so on. 
+
+library(dplyr)
+library(nlme)
+library(mgcv)
+
+##############WAA GAM; Before each WAA GAM test make time-period shorter
+idx = which(data$year %in% c(1962:2020)) #so there would not be years with values NA FOR WAA 2
+dat2 = data[idx,]
+
+###############Tested GAM with froward selection, WAA 2 Step 1; repeate this with all WAA (two-five) 
+summary(gam(two ~ s(sum, k = 4), data = dat2)) #replace two with other WAA accordingly
+summary(gam(two ~ s(sum0, k = 4), data = dat2))
+summary(gam(two ~ s(sum1, k = 4), data = dat2))
+
+summary(gam(two ~ s(t_aug, k = 4), data = dat2))
+summary(gam(two ~ s(t_aug0, k = 4), data = dat2))
+summary(gam(two ~ s(t_aug1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ws, k = 4), data = dat2))
+summary(gam(two ~ s(ws0, k = 4), data = dat2))
+summary(gam(two ~ s(ws1, k = 4), data = dat2))
+
+summary(gam(two ~ s(l_N, k = 4), data = dat2)) 
+summary(gam(two ~ s(l_N0, k = 4), data = dat2))
+summary(gam(two ~ s(l_N_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(l_E1, k = 4), data = dat2))
+summary(gam(two ~ s(l_E10, k = 4), data = dat2))
+summary(gam(two ~ s(l_E1_1, k = 4), data = dat2)) 
+
+summary(gam(two ~ s(l2_E2, k = 4), data = dat2))
+summary(gam(two ~ s(l2_E20, k = 4), data = dat2))
+summary(gam(two ~ s(l2_E2_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(l2_E3, k = 4), data = dat2))
+summary(gam(two ~ s(l2_E30, k = 4), data = dat2))
+summary(gam(two ~ s(l2_E3_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea_N, k = 4), data = dat2))
+summary(gam(two ~ s(ea_N0, k = 4), data = dat2))
+summary(gam(two ~ s(ea_N_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea_E1, k = 4), data = dat2))
+summary(gam(two ~ s(ea_E10, k = 4), data = dat2))
+summary(gam(two ~ s(ea_E1_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea_E2, k = 4), data = dat2))
+summary(gam(two ~ s(ea_E20, k = 4), data = dat2))
+summary(gam(two ~ s(ea_E2_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea_E3, k = 4), data = dat2))
+summary(gam(two ~ s(ea_E30, k = 4), data = dat2))
+summary(gam(two ~ s(ea_E3_1,  k = 4), data = dat2))
+
+summary(gam(two ~ s(ea2_N, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_N0, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_N_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea2_E1, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_E10, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_E1_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea2_E2, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_E20, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_E2_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(ea2_E3, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_E30, k = 4), data = dat2))
+summary(gam(two ~ s(ea2_E3_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e_N, k = 4), data = dat2))
+summary(gam(two ~ s(e_N0, k = 4), dat a= dat2))
+summary(gam(two ~ s(e_N_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e_E1, k = 4), data = dat2))
+summary(gam(two ~ s(e_E10, k = 4), data = dat2))
+summary(gam(two ~ s(e_E1_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e_E2, k = 4), data = dat2))
+summary(gam(two ~ s(e_E20, k = 4), data = dat2))
+summary(gam(two ~ s(e_E2_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e_E3, k = 4), data = dat2))
+summary(gam(two ~ s(e_E30, k = 4), data = dat2))
+summary(gam(two ~ s(e_E3_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e2_N, k = 4), data=dat2))
+summary(gam(two ~ s(e2_N0, k = 4), data = dat2))
+summary(gam(two ~ s(e2_N_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e2_E1, k = 4), data = dat2))
+summary(gam(two ~ s(e2_E10, k = 4), data = dat2))
+summary(gam(two ~ s(e2_E1_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e2_E2, k = 4), data = dat2))
+summary(gam(two ~ s(e2_E20, k = 4), data = dat2))
+summary(gam(two ~ s(e2_E2_1, k = 4), data = dat2))
+
+summary(gam(two ~ s(e2_E3, k = 4), data = dat2))
+summary(gam(two ~ s(e2_E30, k = 4), data = dat2))
+summary(gam(two ~ s(e2_E3_1, k = 4), data = dat2))
+
+####################################################
+#Step 1 model for WAA 2
+summary(gam(two ~ s(l2_E30, k = 4), data = dat2)) #final model of step 1
+
+#Do gam.check with all the models
+gam.check(gam(two ~ s(l2_E30, k = 4), data = dat2))
+
+#Step 2 model for WAA 2 - test all variables again! 
+summary(gam(two ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4), data = dat2) #final model of step 2; final model for WAA 2
+
+#Step 3 model for WAA 2 - test all variables again!
+summary(gam(two ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(..., k = 4), data = dat2) 
+
+####################################################
+#Repete all this with WAA 3-5
+Before each WAA GAM test make time-period shorter
+#idx = which(data$year %in% c(1963:2020)) #so there would not be years with values NA FOR WAA 3
+#data = dat2[idx,]
+
+#Final step for WAA 3
+summary(gam(three ~ s(l2_E30, k = 4) + s(t_aug2, k = 4)+ s(ws2, k = 4), data = dat2))
+####################################################
+
+#idx = which(data$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 4
+#data = dat2[idx,]
+
+#Final step for WAA 4
+summary(gam(four ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4)+ s(sum0, k = 4), data = dat2))
+
+####################################################
+
+#idx = which(data$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 5
+#data = dat2[idx,]
+
+#Final step for WAA 4
+summary(gam(five ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(ws0, k = 4), data = dat2))
+#####################################################END OF CODE
+
+
