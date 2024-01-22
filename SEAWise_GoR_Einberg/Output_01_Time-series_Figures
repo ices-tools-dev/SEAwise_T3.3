@@ -8,7 +8,7 @@ rm(list=ls())
 #One-five. WAA of 1-5 year old herring (g)
 #x, x1-x4. Mean annual growth (g) of 2-5 year old fish. X1 mean annual growth of ear-old fish, x2 3-year-old fish and so on. 
 #Ws - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
-and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
 #Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
 #Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
 #e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
@@ -130,23 +130,23 @@ text(c(2012, 2012, 2012, 2012, 2012),c(19, 18, 17, 16, 15), labels = c("1", "2",
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(2, 2), tck=-0.02, mar=c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(e_N ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
-  lines(e_N ~ year, data = eur, col = 1)
+  plot(e_N ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
+  lines(e_N ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("a) E. affinis affinis May (N)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(e_E1 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
-  lines(e_E1 ~ year, data = eur, col = 1)
+  plot(e_E1 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
+  lines(e_E1 ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("b) E. affinis affinis May (I-III)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(e_E2 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(e_E2 ~ year, data = eur, col = 1)
+  plot(e_E2 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(e_E2 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("c) E. affinis affinis May (IV-V)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(e_E3 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(e_E3 ~ year, data = eur, col = 1)
+  plot(e_E3 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(e_E3 ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("d) E. affinis affinis May (adult)", side = 3, adj = 0, line = 0, cex = .8)   
 }
@@ -157,23 +157,23 @@ if(TRUE){
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(2, 2), tck=-0.02, mar = c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(e2_N ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
-  lines(e2_N ~ year, data = eur, col = 1)
+  plot(e2_N ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
+  lines(e2_N ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("a) E. affinis affinis August (N)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(e2_E1 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(e2_E1 ~ year, data = eur, col = 1)
+  plot(e2_E1 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(e2_E1 ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("b) E. affinis affinis August (I-III)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(e2_E2 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
-  lines(e2_E2 ~ year, data = eur, col = 1)
+  plot(e2_E2 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
+  lines(e2_E2 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("c) E. affinis affinis August (IV-V)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(e2_E3 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(e2_E3 ~ year, data = eur, col = 1)
+  plot(e2_E3 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(e2_E3 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("d) E. affinis affinis August (adult)", side = 3, adj = 0, line = 0, cex = .8)  
 }
@@ -183,23 +183,23 @@ if(TRUE){
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(2, 2), tck=-0.02, mar = c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(ea_N ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
-  lines(ea_N ~ year, data = eur, col = 1)
+  plot(ea_N ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab="Year", ylim=c(0, 15))
+  lines(ea_N ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("a) E. affinis affinis & Acartia spp. May (N)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(ea_E1 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea_E1 ~ year, data = eur, col = 1)
+  plot(ea_E1 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea_E1 ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("b) E. affinis affinis & Acartia spp. May (I-III)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(ea_E2 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea_E2 ~ year, data = eur, col = 1)
+  plot(ea_E2 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea_E2 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("c) E. affinis affinis & Acartia spp. May (IV-V)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(ea_E3 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea_E3 ~ year, data = eur, col = 1)
+  plot(ea_E3 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea_E3 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("d) E. affinis affinis & Acartia spp. May (adult)", side = 3, adj = 0, line = 0, cex = .8)  
 }
@@ -210,23 +210,23 @@ if(TRUE){
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(ea2_N ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea2_N ~ year, data = eur, col = 1)
+  plot(ea2_N ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea2_N ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("a) E. affinis affinis & Acartia spp. August (N)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(ea2_E1 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea2_E1 ~ year, data = eur, col = 1)
+  plot(ea2_E1 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea2_E1 ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("b) E. affinis affinis & Acartia spp. August (I-III)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(ea2_E2 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea2_E2 ~ year, data = eur, col = 1)
+  plot(ea2_E2 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea2_E2 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("c) E. affinis affinis & Acartia spp. August (IV-V)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(ea2_E3 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(ea2_E3 ~ year, data = eur, col = 1)
+  plot(ea2_E3 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(ea2_E3 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("d) E. affinis affinis & Acartia spp. August (adult)", side = 3, adj = 0, line = 0, cex = .8)   
 }
@@ -237,23 +237,23 @@ if(TRUE){
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(l_N ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l_N ~ year, data = eur, col = 1)
+  plot(l_N ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l_N ~ year, data = w, col = 1)
   axis(2, col = 1)
   mtext("a) L. macrurus macrurus May (N)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(l_E1 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l_E1 ~ year, data = eur, col = 1)
+  plot(l_E1 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l_E1 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("b) L. macrurus macrurus May (I-III)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(l_E2 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l_E2 ~ year, data = eur, col = 1)
+  plot(l_E2 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l_E2 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("c) L. macrurus macrurus May (IV-V)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(l_E3 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab =  "Year", ylim=c(-3, 15))
-  lines(l_E3 ~ year, data = eur, col = 1)
+  plot(l_E3 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab =  "Year", ylim=c(-3, 15))
+  lines(l_E3 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("d) L. macrurus macrurus May (adult)", side = 3, adj = 0, line = 0, cex = .8) 
   
@@ -264,23 +264,23 @@ if(TRUE){
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(l2_N ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l2_N ~ year, data = eur, col = 1)
+  plot(l2_N ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l2_N ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("a) L. macrurus macrurus August (N)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(l2_E1 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l2_E1 ~ year, data = eur, col = 1)
+  plot(l2_E1 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l2_E1 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("b) L. macrurus macrurus August (I-III)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(l2_E2 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l2_E2 ~ year, data = eur, col = 1)
+  plot(l2_E2 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l2_E2 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("c) L. macrurus macrurus August (IV-V)", side = 3, adj = 0, line = 0, cex = .8) 
   
-  plot(l2_E3 ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
-  lines(l2_E3 ~ year, data = eur, col = 1)
+  plot(l2_E3 ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(-3, 15))
+  lines(l2_E3 ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("d) L. macrurus macrurus August (adult)", side = 3, adj = 0, line = 0, cex = .8)   
 }
@@ -291,8 +291,8 @@ if(TRUE){
 quartz(width = 6.8, height = 4)
 if(TRUE){
   par(mfrow = c(1, 1), tck = -0.02, mar = c(2.5,2.8,2,2.8), mgp = c(1.3,0.3,0))
-  plot(t_aug ~ year, data = eur, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
-  lines(t_aug ~ year, data = eur, col = 1)
+  plot(t_aug ~ year, data = w, pch = 16, col = 1, axes = T, ylab = expression(paste("Abundance ln(ind. ",m**-2,")")), xlab = "Year", ylim=c(0, 15))
+  lines(t_aug ~ year, data = w, col = 1)
   axis(2, col=1)
   mtext("Small cladocerans", side = 3, adj = 0, line = 0, cex = .8) 
 }  
