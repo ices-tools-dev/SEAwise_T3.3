@@ -41,7 +41,7 @@ fullform.rec <- logw ~ sal.s + ssb.s + temp.s + I(temp.s^2)
 fullformGAM.rec <- logw ~ sal.s + ssb.s + s(temp.s, k=3) 
 
 #range of penalty terms to try in LASSO methods
-lambdas <-  seq(50, 0, by = -0.5)
+lambdas <-  seq(10, 0, by = -0.5)
 
 #set up cluster 
 ncores <- detectCores() # max available cores
