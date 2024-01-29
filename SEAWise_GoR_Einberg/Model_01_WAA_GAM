@@ -126,7 +126,7 @@ summary(gam(two ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4), data = dat2) #final model
 summary(gam(two ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(..., k = 4), data = dat2) 
 
 ####################################################
-#Repete all this with WAA 3-5
+#Repeate all this with WAA 3-5
 Before each WAA GAM test make time-period shorter
 #idx = which(data$year %in% c(1963:2020)) #so there would not be years with values NA FOR WAA 3
 #data = dat2[idx,]
