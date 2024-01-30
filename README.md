@@ -29,6 +29,4 @@ remotes::install_github("glmmTMB/glmmTMB/glmmTMB")
 install_github("https://github.com/bbolker/lmmen")
 # fork that handles multiple RE
 install_github("https://github.com/mebrooks/cv.glmmLasso")
-# state-space model
-install_github("mebrooks/growmod/growmod")
 ```
