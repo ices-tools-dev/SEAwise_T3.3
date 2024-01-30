@@ -57,9 +57,6 @@ rsconnect/
 data/*.Rdata
 
 # subsequent folders are not synced
-/model/
-/output/
-/report/
 
 # temporary folder
 /tmp
