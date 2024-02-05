@@ -42,9 +42,9 @@ laaGrowth <- function(dat, control = list(maxiter = 500), nTry = 10,
     while(i <= nTry){
       start = c(K= runif(1, 0.05, 0.4), 
         Linf = runif(1, min = max(dat$l2)*1, max(dat$l2)*1.5),
-        C1 = runif(1, 1e-10, 1e-5))
+        C1 = runif(1, -1e-5, -1e-10))
       lower = c(K = 0.01, Linf = max(dat$l2)*0.9, C1 = -1e10)
-      upper = c(K = 1, Linf = max(dat$l2)*2, C1 = 1e10)
+      upper = c(K = 1, Linf = max(dat$l2)*2, C1 = 0)
       fm <- formula(l2 ~ l+((Linf + C1*covar1)-l) * (1-exp(-K*dt)))
       fit.i <- try(silent = TRUE, expr = do.call(nls, list(fm, data=dat, 
         start = start, lower = lower, upper = upper, algorithm = "port", 
@@ -91,9 +91,9 @@ laaGrowth <- function(dat, control = list(maxiter = 500), nTry = 10,
       start = c(K = runif(1, 0.05, 0.4), 
         Linf = runif(1, min = max(dat$l2)*1, max(dat$l2)*1.5),
         D = runif(1, min = 0.1, 1),
-        C1 = runif(1, 1e-10, 1e-5))
+        C1 = runif(1, -1e-5, -1e-10))
       lower = c(K = 0.01, Linf = max(dat$l2)*0.9, D = 0.1, C1 = -1e10)
-      upper = c(K = 1, Linf = max(dat$l2)*2, D = 3, C1 = 1e10)
+      upper = c(K = 1, Linf = max(dat$l2)*2, D = 3, C1 = 0)
       fm <- formula(l2 ~ ((Linf+covar1*C1)^(1/D)*(1-exp(-K*dt))+l^(1/D)*exp(-K*dt))^D)
       fit.i <- try(silent = TRUE, expr = do.call(nls, list(fm, data=dat, 
         start = start, lower = lower, upper = upper, algorithm = "port", 
@@ -139,9 +139,9 @@ laaGrowth <- function(dat, control = list(maxiter = 500), nTry = 10,
     while(i <= nTry){
       start = c(K = runif(1, 0.05, 0.4), 
         Linf = runif(1, min = max(dat$l2)*1, max(dat$l2)*1.5),
-        C1 = runif(1, 1e-10, 1e-5))
+        C1 = runif(1, -1e-5, -1e-10))
       lower = c(K = 0.01, Linf = max(dat$l2)*0.9, C1 = -1e10)
-      upper = c(K = 1, Linf = max(dat$l2)*2, C1 = 1e10)
+      upper = c(K = 1, Linf = max(dat$l2)*2, C1 = 0)
       fm <- formula(l2 ~ exp(log(Linf+C1*covar1)*(1-exp(-K*dt))+log(l)*exp(-K*dt)))
       fit.i <- try(silent = TRUE, expr = do.call(nls, list(fm, data=dat, 
         start = start, lower = lower, upper = upper, algorithm = "port", 
@@ -157,8 +157,8 @@ laaGrowth <- function(dat, control = list(maxiter = 500), nTry = 10,
     }
   }
   
-  BICs <- unlist(lapply(mods, FUN = function(x){if(!is.null(x)){BIC(x)}}))
-  best <- unname(which.min(BICs))
+  AICs <- unlist(lapply(mods, FUN = function(x){if(!is.null(x)){AIC(x)}}))
+  best <- unname(which.min(AICs))
   mod <- mods[[best]]
   mod$name <- names(mods)[best]
   return(mod)
