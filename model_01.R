@@ -315,6 +315,7 @@ for(stk in STKs[1:length(STKs)]){
         dat.valid$fcYear <- dat.valid$year - maxDataYear # number of forecast years from last traing year
         dat.valid$nFitYear <- length(unique(dat.train$year)) # number of training years
         dat.valid$best <-  NA # record the name of the method, just to fill the space
+        if(scen$name[s] == "laaGrowth"){dat.valid$best <- gFit$name}
         
       } # end of forecast procedure for non-naive models
       
