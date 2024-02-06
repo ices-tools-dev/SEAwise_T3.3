@@ -21,8 +21,8 @@ source("R/laaGrowth.R") # function to fit length increment growth models
 # 3. set-up ------------------------------------------------------------------
 
 # scenarios / models
-scen <- data.frame(name = #"lasso_BIC", "lasso_CV10perc", "lasso_CV20perc"))
-                            c("laaGrowth", "lasso_BIC", "lasso_CV10perc", 
+scen <- data.frame(name = #c("laaGrowth","glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
+                  c("laaGrowth", "lasso_BIC", "lasso_CV10perc", 
                             "lasso_CV20perc", "glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
 
 nTry <- 20 # for use in laaGrowth models
@@ -68,12 +68,18 @@ for(stk in STKs){
   
   dat$covar1 <- dat$ssb # for use in laaGrowth models
   
+  dat <- na.omit(dat)
+  
   dat <- transform(dat, logw2=log(w2), logw=log(w), 
                    ssb.s=scale(ssb), sal.s=scale(sal), temp.s=scale(temp),
                    yearf=factor(year), cohortf=factor(cohort))
-  
-  #need to make sure environmental variables are available
-  dat <- na.omit(dat)
+  # save scale attributes to recreate scaling
+  ssb.mu <- mean(dat$ssb)
+  ssb.sd <- sqrt(var(dat$ssb))
+  temp.mu <- mean(dat$temp)
+  temp.sd <- sqrt(var(dat$temp))
+  sal.mu <- mean(dat$sal)
+  sal.sd <- sqrt(var(dat$sal))
   
   ranYear <- range(dat$year)
   minage <- min(dat$age, na.rm = TRUE)
@@ -105,7 +111,9 @@ for(stk in STKs){
       }else{
         gFit<- gFit0
       }
-      save(gFit, gFit0, file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+      
+      save(gFit, gFit0,  ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
+           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       mod <- summary(gFit0)$coefficients[,"Estimate"]
     }
     
@@ -131,7 +139,8 @@ for(stk in STKs){
       }else{
         gFit<- gFit0
       }
-      save(gFit, gFit0, file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+      save(gFit, gFit0,  ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
+           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       mod <- summary(gFit0)$coefficients[,"Estimate"]
     } 
     
@@ -157,7 +166,8 @@ for(stk in STKs){
       }else{
         gFit<- gFit0
       }
-      save(gFit, gFit0, file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+      save(gFit, gFit0,  ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
+           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       mod <- summary(gFit0)$coefficients[,"Estimate"]
     } 
     
@@ -168,8 +178,9 @@ for(stk in STKs){
       clusterExport(mycl, "dat")
       dma1 <- dredge(global.model1, rank = "AICc", cluster=mycl)
       gFit <- get.models(dma1, subset= 1)[[1]]
-      save(gFit, file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
-
+      save(gFit, ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
+           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+      
       mod <- rep(0, length(fixef(global.model1)$cond))
       names(mod) <- names(fixef(global.model1)$cond)
       
@@ -182,7 +193,8 @@ for(stk in STKs){
       clusterExport(mycl, "dat")
       dma1 <- dredge(global.model1, rank = "AICc", cluster=mycl)
       gFit <- get.models(dma1, subset= 1)[[1]]
-      save(gFit, file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+      save(gFit, ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
+           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       
       mod <- rep(0, length(fixef(global.model1)$cond))
       names(mod) <- names(fixef(global.model1)$cond)
@@ -190,8 +202,8 @@ for(stk in STKs){
       mod[names(fixef(gFit)$cond)] <- fixef(gFit)$cond
     }      
     
-    
-    if(scen$name[s] != c("laaGrowth")){
+    #save LMMs
+    if(!scen$name[s] %in% c("laaGrowth", "glmmTMB_GAMM_AICc")){
       RES[[paste(stk, scen$name[s], sep="_")]] <- list(mod=mod, stk=stk, scen=scen$name[s])
     }
     
@@ -212,8 +224,13 @@ for(stk in STKs){
     names(mod) <- names(fixef(global.model)$cond)
     
     mod[names(fixef(minage.i)$cond)] <- fixef(minage.i)$cond
-    REC[[stk]] <- mod
-    save(minage.i, file=paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))
+    
+    #save recruitment LMs
+    if(!scen$name[s] %in% c("laaGrowth", "glmmTMB_GAMM_AICc")){
+      REC[[paste(stk, scen$name[s], sep="_")]] <- mod
+    }
+    save(minage.i, ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
+         file=paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))
     
   } # end of scen loop ----
   
@@ -221,8 +238,8 @@ for(stk in STKs){
 } # end of stk loop ----
 
 
-#save(RES, file = paste0("model/allLMMs.Rdata"))
-#save(REC, file = paste0("model/allrecLMs.Rdata"))
+save(RES, file = paste0("model/allLMMs.Rdata"))
+save(REC, file = paste0("model/allrecLMs.Rdata"))
 
 parallel::stopCluster(mycl)
 
