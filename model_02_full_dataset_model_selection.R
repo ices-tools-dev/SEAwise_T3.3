@@ -3,7 +3,6 @@
 rm(list = ls())
 
 
-
 # 1. load data objects -------------------------------------------------------
 load("data/data_list_DF.Rdata")
 load("data/lutLWcoefs.Rdata")

@@ -55,7 +55,7 @@ lambdas <-  seq(10, 0, by = -0.5)
 
 STKs <- names(DF)[-1]
 for(stk in STKs[1:length(STKs)]){
-  # stk <- "cod.27.7a"
+  # stk <- "her.27.28" 
   print(paste0("Starting ", stk))
   dat <- DF[[stk]]
   
@@ -105,8 +105,9 @@ for(stk in STKs[1:length(STKs)]){
 
       # laaGrowth -----
       if(scen$name[s] == "laaGrowth"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
-        gFit <- update(gFit, data = dat.train, weights = dat.train$n) 
+        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata")) # gFit
+        gFit <- update(gFit, data = dat.train, weights = dat.train$n, control = list(warnOnly = TRUE))
+        # coefficients(gFit)
       }
       
       # lasso_BIC -----

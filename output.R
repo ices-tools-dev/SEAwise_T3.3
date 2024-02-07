@@ -17,3 +17,7 @@ library(FLCore)
 # source output scripts ---------------------------------------------------
 
 source("output_01.R")
+source("output_02_full_dataset_model_selection.R")
+source("output_03_method_forecast_evaluation.R")
+source("output_04_model_forecast_evaluation.R")
+
