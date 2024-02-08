@@ -164,6 +164,7 @@ for(area in names(allSTKs)){
 
 ## all areas by method -------------
 ## summarize by method only -------------
+allstks <- list()
 
  for(stk in completedSTKs){
   load(paste0("model/", stk, "_res.Rdata"))
@@ -188,18 +189,29 @@ predw1lm <- do.call(rbind, allstks)
 tmp <- reshape::melt(predw1lm[,c("mod" , "stk", "rel_mae")],
                      id.vars = c("mod", "stk"))
 
-(potential <- ddply(subset(tmp, value<1, drop = TRUE), ~stk, summarize, 
+potential.braod <- subset(tmp, value<1, drop = TRUE)
+
+(potential <- ddply(potential.braod, ~stk, summarize, 
                    method = mod[which.min(value)]))
 
-save(potential, file="output/stocks and methods with forecasting potential.Rdata")
+save(potential, potential.braod, file="output/stocks and methods with forecasting potential.Rdata")
 
-
-load("model/allGAMMs.Rdata", verbose = TRUE)
-names(RES) = unlist(lapply(strsplit(names(RES), split = "_"), function(x){x[1]}))
-lapply(RES[subset(potential, method=="glmmTMB_GAMM_AICc")$stk], function(x){x$mod})
-tmp <- data.frame(do.call(rbind, lapply(RES[subset(potential, method=="glmmTMB_GAMM_AICc")$stk], function(x){x$mod})))
-tmp$stk <- subset(potential, method=="glmmTMB_GAMM_AICc")$stk
-mtemp <- reshape::melt(tmp, id.vars = "stk")
-mtemp$value[mtemp$value==0]=NA
-ggplot(subset(mtemp, !variable %in% c("X.Intercept.", "logw", "s.age.1", "logw.age"), drop=TRUE), aes(value, variable))+facet_grid(stk~.)+geom_point()+geom_vline(xintercept = 0)
-ggsave("potential effects in GAMMs.png", height=6.5, width=5)
+ggplot(potential.braod, aes(mod, value))+   
+  xlab(NULL)+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  ylab(expression(MAE[modeled]/MAE[naive]))+
+  geom_hline(yintercept = 1)+
+  facet_wrap(~stk, scale="free")+
+  geom_point()
+  
+ggsave("output/figures/stocks and methods with forecasting potential.png", height=10, width=7)
+#   
+# load("model/allGAMMs.Rdata", verbose = TRUE)
+# names(RES) = unlist(lapply(strsplit(names(RES), split = "_"), function(x){x[1]}))
+# lapply(RES[subset(potential, method=="glmmTMB_GAMM_AICc")$stk], function(x){x$mod})
+# tmp <- data.frame(do.call(rbind, lapply(RES[subset(potential, method=="glmmTMB_GAMM_AICc")$stk], function(x){x$mod})))
+# tmp$stk <- subset(potential, method=="glmmTMB_GAMM_AICc")$stk
+# mtemp <- reshape::melt(tmp, id.vars = "stk")
+# mtemp$value[mtemp$value==0]=NA
+# ggplot(subset(mtemp, !variable %in% c("X.Intercept.", "logw", "s.age.1", "logw.age"), drop=TRUE), aes(value, variable))+facet_grid(stk~.)+geom_point()+geom_vline(xintercept = 0)
+# ggsave("potential effects in GAMMs.png", height=6.5, width=5)
