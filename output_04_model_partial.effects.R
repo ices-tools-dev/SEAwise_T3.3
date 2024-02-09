@@ -30,21 +30,24 @@ load("data/lutLWcoefs.Rdata")
 # get models
 # updated on the 2024-02-09: from image "stocks and methods with forecast potential.png" (2024-02-08,3:49pm)
 # not including GAMM models...
-model.lut = as.data.frame(rbind(c("cod.27.47d20","glmmTMB_AICc"), #"laaGrowth"),
-                  c("cod.27.7a","glmmTMB_AICc"),#"glmmTMB_GAMM_AICc"),
-                  c("had.27.46a20","glmmTMB_AICc"),
-                  c("had.27.7a","laaGrowth"),
-                  c("had.27.7b-k","glmmTMB_AICc"), #"glmmTMB_GAMM_AICc"),
-                  c("meg.27.7b-k8abd","lasso_CV20perc"),
-                  c("pil.27.8abd","glmmTMB_AICc"), #"laaGrowth"),
-                  c("pil.27.8c9a","laaGrowth"),#"glmmTMB_GAMM_AICc"),
-                  c("pok.27.3a46","laaGrowth"),
-                  c("sol.27.20-24","lasso_BIC"),
-                  c("sol.27.7a","glmmTMB_AICc"),
-                  c("sol.27.7e","laaGrowth"), # new stk
-                  c("whg.27.47d","laaGrowth"),
-                  c("whg.27.7a","glmmTMB_AICc"), #"laaGrowth"),
-                  c("whg.27.7b-ce-k","glmmTMB_AICc"))) #"glmmTMB_GAMM_AICc")))
+# model.lut = as.data.frame(rbind(c("cod.27.47d20","glmmTMB_AICc"), #"laaGrowth"),
+#                   c("cod.27.7a","glmmTMB_AICc"),#"glmmTMB_GAMM_AICc"),
+#                   c("had.27.46a20","glmmTMB_AICc"),
+#                   c("had.27.7a","laaGrowth"),
+#                   c("had.27.7b-k","glmmTMB_AICc"), #"glmmTMB_GAMM_AICc"),
+#                   c("meg.27.7b-k8abd","lasso_CV20perc"),
+#                   c("pil.27.8abd","glmmTMB_AICc"), #"laaGrowth"),
+#                   c("pil.27.8c9a","laaGrowth"),#"glmmTMB_GAMM_AICc"),
+#                   c("pok.27.3a46","laaGrowth"),
+#                   c("sol.27.20-24","lasso_BIC"),
+#                   c("sol.27.7a","glmmTMB_AICc"),
+#                   c("sol.27.7e","laaGrowth"), # new stk
+#                   c("whg.27.47d","laaGrowth"),
+#                   c("whg.27.7a","glmmTMB_AICc"), #"laaGrowth"),
+#                   c("whg.27.7b-ce-k","glmmTMB_AICc"))) #"glmmTMB_GAMM_AICc")))
+
+load("output/stocks and methods with forecasting potential.Rdata")
+model.lut = potential
 names(model.lut) = c("stock","model")
 
 mods = list.files("./model/fit_by_stk_n_method/",pattern = "*.Rdata")
