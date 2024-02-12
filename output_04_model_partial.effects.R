@@ -112,9 +112,11 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
         scale_fill_gradientn(aes(values = yhat),colours = pal) + 
         geom_contour(aes(z = yhat),binwidth = (max(pdp_melt$yhat) - min(pdp_melt$yhat))/25,color = "gray50") + 
         ggtitle(paste(v,collapse = ":")) + 
-        theme(legend.key.size = 6) + 
-        guides(fill=guide_legend(title=paste("yhat","\n","~",v))) + 
-        theme_bw()
+        theme_bw() + 
+        theme(legend.key.size = unit(0.2, 'cm'),
+              legend.title = element_text(size = 7), 
+              legend.text = element_text(size = 7)) +
+        guides(fill= guide_colorbar(title=paste("yhat","\n","~",v)))
       ii = ii +1
     } else {
       if(grepl("I\\(",v)){
@@ -176,9 +178,18 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
       scale_fill_manual(values = col_age) + 
       ggtitle(single.effects[i]) + 
       xlab(single.effects[i]) +
-      theme(legend.key.size = 6) + 
-      guides(fill=guide_legend(title="Age")) + 
-      theme_bw()
+      theme_bw() + 
+      theme(legend.key.size = unit(0.5, 'cm'),
+            legend.spacing.x = unit(0.1, 'cm'),
+            legend.spacing.y = unit(0.1, 'cm'),
+            legend.title = element_text(size = 8), 
+            legend.text = element_text(size = 8)) + 
+      guides(fill=guide_legend(title="Age",
+                               nrow = ifelse(length(unique(vars_pdp$age))<= 6,1,
+                                             ifelse(length(unique(vars_pdp$age)) < 12,
+                                                    2,3)),
+                               override.aes = list(size = 2)),
+             shape = guide_legend(override.aes = list(size = 2))) 
   }
   if(length(interaction_plot)>0){
     all.plots = c(pdp.plot,interaction_plot)
@@ -199,7 +210,7 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
   pdp.plots = patchwork::wrap_plots(all.plots, guides = "collect",
                                     nrow = nr, ncol = nc) &
     theme(legend.position = 'bottom',
-    legend.direction = 'horizontal')
+    legend.direction = 'vertical')
   
   # return
   return.list = list(pdp = pdp_out,
@@ -304,6 +315,16 @@ pdf("./output/figures/Final_models_pdps.pdf",width = 10,height = 7)
 lapply(pdps.eval_list,function(x) x$plot)
 dev.off()
 
+# save in extra directory
+dir.create("./output/figures/pdps",showWarnings = F)
+for(i in 1:length(pdps.eval_list)){
+  png(file.path("./output/figures/pdps",paste0(names(pdps.eval_list)[i],"_pdp",".png")),
+      width = 250*10,height = 250*7,res = 300)
+  print(pdps.eval_list[[i]]$plot)
+  dev.off()
+}
+
+# save object
 save(pdps.eval_list,file = "./model/PDPs_finalModels.Rdata")
 
 
