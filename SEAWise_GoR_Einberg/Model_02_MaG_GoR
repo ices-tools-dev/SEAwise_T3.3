@@ -8,7 +8,7 @@ rm(list=ls())
 #One-five. WAA of 1-5 year old herring (g)
 #x, x1-x4. Mean annual growth (g) of 2-5 year old fish. X1 mean annual growth of ear-old fish, x2 3-year-old fish and so on. 
 #Ws - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
-and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
 #Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
 #Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
 #e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
@@ -23,7 +23,7 @@ library(mgcv)
 
 #Mean annual growth (MaG) age-2 (x1), age-3 (x2), age-4 (x3), age-5 (x4)
 ######################Tested GAM with froward selection, age-2 (x1) Step 1; repeate this with all MaG (x1-x4) 
-summary(gam(x1 ~ s(sum, k = 4), data = dat)) #replace two with other WAA accordingly
+summary(gam(x1 ~ s(sum, k = 4), data = dat)) #replace two with other MaG accordingly
 summary(gam(x1 ~ s(sum0, k = 4), data = dat))
 summary(gam(x1 ~ s(ws, k = 4), data = dat))
 summary(gam(x1 ~ s(ws0, k = 4), data = dat))
