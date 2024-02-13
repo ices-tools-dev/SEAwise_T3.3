@@ -5,7 +5,7 @@
 #One-five. WAA of 1-5 year old herring (g)
 #x, x1-x4. Mean annual growth (g) of 2-5 year old fish. X1 mean annual growth of ear-old fish, x2 3-year-old fish and so on. 
 #Wa - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
-and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
 #Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
 #Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
 #e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
@@ -62,7 +62,7 @@ plot(mean_l2_E3 ~ cy, axes = F, type = "n", ylab = "", xlab = "", xlim = c(1965,
 lines(mean_l2_E3 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
 mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("a) Effect of L. macrurus (Aug, adult).", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("a) Effect of L. macrurus macrurus (August, adult).", side = 3, adj = 0, cex = 1, line = 0.2)
 
 plot(cor2 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, xlim = c(1965,2015))
 lines(cor2 ~ cy)
@@ -76,15 +76,15 @@ plot(mean_e_E20 ~ cy, axes = F, type = "n", ylab = "", xlab = "", xlim = c(1965,
 lines(mean_e_E20 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
 mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("b) Effect of E. affinis affinis (prev. May IV-V)", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("b) Effect of E. affinis affinis (prev. May IV-V)", side = 3, adj = 0, cex = 1, line = 0.2)
 
 
 ##############################################################################
 #Figure 2
 #Results of the chronological sliding window analysis: time trends in linear slopes of mean annual growth (g) age-3 with a) L. macrurus macrurus abundance (ln(ind. m-2)) in May (copepodite stage I-III), b) previous year spawning stock biomass (SSB, thousand tons), and c) E. affinis affinis previous year abundance (ln(ind. m-2)) in May (adult copepods). Filled points donate values, where the slope was significant at p<0.05. Grey line is the mean values of the respective variable in each 15-year subset (1961-1975, 1962-1976,..., 2006-2020). On the x-axis is the middle year of each 15-year subset.
-
 summary(gam(x2 ~ s(l_E1, k = 4) + s(SSB0, k = 4) + s(e_E30, k = 4), data = dat))
-set=subset(dat, select = c("year","x2", "l_E1", "e_E30", "SSB0"))
+summary(gam(x2 ~ s(l_E1, k = 4) + s(SSB0, k = 4) + s(e_E30, k = 4), data = dat))
+set=subset(dat, select = c("year","x2", "l_E1", "SSB0", "e_E30"))
 
 cor1 = rep(NA,44) 
 cor2 = rep(NA,44) 
@@ -118,7 +118,7 @@ for(i in 1:46){
 }
 
 par(mfrow = c(1, 3), tck=-0.02, mar=c(2.7,2.7,2,2.5), mgp = c(1.3,0.3,0), cex.axis = 1.1, cex.lab = 1.1)
-plot(cor1 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, xlim = c(1965,2015))
+plot(cor1 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, cex = 1, xlim = c(1965, 2015))
 lines(cor1 ~ cy)
 points(cor1 ~ cy, col = rgb(1,1,1), pch = 16, cex = .9)
 idx = which(p1 < 0.05)
@@ -130,10 +130,10 @@ par(new = T)
 plot(mean_l_E1 ~ cy, axes = F, type = "n", ylab = "", xlab = "", xlim = c(1965,2015))
 lines(mean_l_E1 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
-mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("a) Effect of L. macrurus (May, I-III).", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 0.7, col = grey(0.5))
+mtext("a) Effect of L. macrurus macrurus (May, I-III).", side = 3, adj = 0, cex = 1, line = 0.2)
 
-plot(cor2 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, xlim = c(1965,2015))
+plot(cor2 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, cex = 1, xlim = c(1965, 2015))
 lines(cor2 ~ cy)
 points(cor2~ cy, col = rgb(1,1,1), pch = 16, cex = .9)
 idx = which(p2 < 0.05)
@@ -144,12 +144,12 @@ par(new = T)
 plot(mean_SSB0 ~ cy, axes = F, type = "n", ylab = "", xlab = "", xlim = c(1965,2015))
 lines(mean_SSB0 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
-mtext("Mean SSB of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("b) Effect of prev. SSB", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("Mean SSB of the window", side = 4, line = 1.3, cex = 0.7, col = grey(0.5))
+mtext("b) Effect of prev. SSB", side = 3, adj = 0, cex = 1, line = 0.2)
 
-plot(cor3 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, xlim = c(1965,2015))
+plot(cor3 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, cex = 1, xlim = c(1965,2015))
 lines(cor3 ~ cy)
-points(cor3~ cy, col = rgb(1,1,1), pch = 16, cex = .9)
+points(cor3 ~ cy, col = rgb(1,1,1), pch = 16, cex = .9)
 idx = which(p3 < 0.05)
 points(cor3[idx] ~cy[idx], pch = 16)
 abline(h=0)
@@ -158,13 +158,13 @@ par(new = T)
 plot(mean_e_E30 ~ cy, axes = F, type = "n", ylab = "", xlab ="", xlim = c(1965,2015))
 lines(mean_e_E30 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
-mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("c) Effect of E. affinis affinis (prev. May adult)", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 0.7, col = grey(0.5))
+mtext("c) Effect of E. affinis affinis (prev. May adult)", side = 3, adj = 0, cex = 1, line = 0.2)
 
 ##############################################################################
 #Figure 3
 #Results of the chronological sliding window analysis: time trends in linear slopes of mean annual growth (g) age-4 with a) previous year spawning stock biomass (SSB, thousand tons), and c) E. affinis affinis abundance (ln(ind. m-2)) in May (adult copepods). Filled points donate values, where the slope was significant at p<0.05. Grey line is the mean values of the respective variable in each 15-year subset (1961-1975, 1962-1976,..., 2006-2020). On the x-axis is the middle year of each 15-year subset.
-
+summary(gam(x3 ~ s(SSB0, k = 4) + s(e_E3, k = 4), data = dat))
 summary(gam(x3 ~ s(SSB0, k = 4) + s(e_E3, k = 4), data = dat))
 set=subset(dat, select = c("year","x3", "SSB0","e_E3"))
 
@@ -206,7 +206,7 @@ plot(mean_SSB0 ~ cy, axes = F, type = "n", ylab = "", xlab = "", xlim = c(1965,2
 lines(mean_SSB0 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
 mtext("Mean SSB of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("a) Effect of prev. SSB", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("a) Effect of prev. SSB", side = 3, adj = 0, cex = 1, line = 0.2)
 
 plot(cor2 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, xlim = c(1965,2015))
 lines(cor2 ~ cy)
@@ -220,12 +220,12 @@ plot(mean_e_E3 ~ cy, axes = F, type = "n", ylab = "", xlab ="", xlim = c(1965,20
 lines(mean_e_E3 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
 mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("b) Effect of E. affinis affinis (May adult)", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("b) Effect of E. affinis affinis (May adult)", side = 3, adj = 0, cex = 1, line = 0.2)
 
 ##############################################################################
 #Figure 4
 #Results of the chronological sliding window analysis: time trends in linear slopes of mean annual growth (g) age-5 with a) Acartia spp. & E. affinis affinis previous year abundance (ln(ind. m-2)) in May (copepodite stage IV-V), and b) previous year spawning stock biomass (SSB, thousand tons). Filled points donate values, where the slope was significant at p<0.05. Grey line is the mean values of the respective variable in each 15-year subset (1961-1975, 1962-1976,..., 2006-2020). On the x-axis is the middle year of each 15-year subset.
-
+summary(gam(x4 ~ s(ea_E20, k = 4) + s(SSB0, k = 4), data = dat))
 summary(gam(x4 ~ s(ea_E20, k = 4) + s(SSB0, k = 4), data = dat))
 set=subset(dat, select = c("year","x4","ea_E20", "SSB0"))
 
@@ -267,7 +267,7 @@ plot(mean_ea_E20 ~ cy, axes = F, type = "n", ylab = "", xlab = "", xlim = c(1965
 lines(mean_ea_E20 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
 mtext("Mean abund. of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("a) Effect of E. affinis affinis & Acartia spp. (prev. May IV-V)", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("a) Effect of Acartia spp. & E. affinis affinis (prev. May IV-V)", side = 3, adj = 0, cex = 1, line = 0.2)
 
 plot(cor2 ~ cy, ylab = "Linear model slope", xlab = "Year", pch = 1, xlim = c(1965,2015))
 lines(cor2 ~ cy)
@@ -281,6 +281,6 @@ plot(mean_SSB0 ~ cy, axes = F, type = "n", ylab = "", xlab ="", xlim = c(1965,20
 lines(mean_SSB0 ~ cy, col = grey(0.5), lwd = 2)
 axis(4)
 mtext("Mean SSB of the window", side = 4, line = 1.3, cex = 1, col = grey(0.5))
-mtext("b) Effect of prev. SSB", side = 3, adj = 0, cex = 0.9, line = 0.2)
+mtext("b) Effect of prev. SSB", side = 3, adj = 0, cex = 1, line = 0.2)
 
 ######END OF CODE
