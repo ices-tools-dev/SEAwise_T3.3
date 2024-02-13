@@ -128,24 +128,24 @@ summary(gam(two ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(..., k = 4), data = da
 
 ####################################################
 #Repeate all this with WAA 3-5
-Before each WAA GAM test make time-period shorter
-#idx = which(dat2$year %in% c(1963:2020)) #so there would not be years with values NA FOR WAA 3
-#dat2 = dat2[idx,]
+#Before each WAA GAM test make time-period shorter
+idx = which(dat2$year %in% c(1963:2020)) #so there would not be years with values NA FOR WAA 3
+dat2 = dat2[idx,]
 
 #Final step for WAA 3
 summary(gam(three ~ s(l2_E30, k = 4) + s(t_aug2, k = 4)+ s(ws2, k = 4), data = dat2))
 ####################################################
 
-#idx = which(dat2$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 4
-#dat2= dat2[idx,]
+idx = which(dat2$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 4
+dat2= dat2[idx,]
 
 #Final step for WAA 4
 summary(gam(four ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4)+ s(sum0, k = 4), data = dat2))
 
 ####################################################
 
-#idx = which(dat2$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 5
-#dat2 = dat2[idx,]
+idx = which(dat2$year %in% c(1965:2020)) #so there would not be years with values NA FOR WAA 5
+dat2 = dat2[idx,]
 
 #Final step for WAA 4
 summary(gam(five ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(ws0, k = 4), data = dat2))
