@@ -4,7 +4,7 @@
 #Year 1960-2020; 
 #Two-five. WAA of 2-5 year old herring (g) 
 #Ws - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
-and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
 #Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
 #Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
 #e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
@@ -16,8 +16,9 @@ library(nlme)
 library(mgcv)
 
 ##############WAA GAM; Before each WAA GAM test make time-period shorter
-idx = which(data$year %in% c(1962:2020)) #so there would not be years with values NA FOR WAA 2
-dat2 = data[idx,]
+dat2 = data
+idx = which(dat2$year %in% c(1962:2020)) #so there would not be years with values NA FOR WAA 2
+dat2 = dat2[idx,]
 
 ###############Tested GAM with froward selection, WAA 2 Step 1; repeate this with all WAA (two-five) 
 summary(gam(two ~ s(sum, k = 4), data = dat2)) #replace two with other WAA accordingly
@@ -81,7 +82,7 @@ summary(gam(two ~ s(ea2_E30, k = 4), data = dat2))
 summary(gam(two ~ s(ea2_E3_1, k = 4), data = dat2))
 
 summary(gam(two ~ s(e_N, k = 4), data = dat2))
-summary(gam(two ~ s(e_N0, k = 4), dat a= dat2))
+summary(gam(two ~ s(e_N0, k = 4), data = dat2))
 summary(gam(two ~ s(e_N_1, k = 4), data = dat2))
 
 summary(gam(two ~ s(e_E1, k = 4), data = dat2))
@@ -128,23 +129,23 @@ summary(gam(two ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(..., k = 4), data = da
 ####################################################
 #Repeate all this with WAA 3-5
 Before each WAA GAM test make time-period shorter
-#idx = which(data$year %in% c(1963:2020)) #so there would not be years with values NA FOR WAA 3
-#data = dat2[idx,]
+#idx = which(dat2$year %in% c(1963:2020)) #so there would not be years with values NA FOR WAA 3
+#dat2 = dat2[idx,]
 
 #Final step for WAA 3
 summary(gam(three ~ s(l2_E30, k = 4) + s(t_aug2, k = 4)+ s(ws2, k = 4), data = dat2))
 ####################################################
 
-#idx = which(data$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 4
-#data = dat2[idx,]
+#idx = which(dat2$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 4
+#dat2= dat2[idx,]
 
 #Final step for WAA 4
 summary(gam(four ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4)+ s(sum0, k = 4), data = dat2))
 
 ####################################################
 
-#idx = which(data$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 5
-#data = dat2[idx,]
+#idx = which(dat2$year %in% c(1964:2020)) #so there would not be years with values NA FOR WAA 5
+#dat2 = dat2[idx,]
 
 #Final step for WAA 4
 summary(gam(five ~ s(l2_E30, k = 4) + s(e_E3_1, k = 4) + s(ws0, k = 4), data = dat2))
