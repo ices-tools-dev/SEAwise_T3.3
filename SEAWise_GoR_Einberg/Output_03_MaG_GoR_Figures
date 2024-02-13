@@ -5,7 +5,7 @@
 #One-five. WAA of 1-5 year old herring (g)
 #x, x1-x4. Mean annual growth (g) of 2-5 year old fish. X1 mean annual growth of ear-old fish, x2 3-year-old fish and so on. 
 #Ws - winter severity. Winter severity was calculated as a sum of negative daily mean air temperatures from November to March
-and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
+#and assigned to the year of spring (e.g., 1990 winter severity describes the period from November 1989–March 1990).
 #Sum - mean daily air temperatures in summer during the main herring feeding period (June-July-August).
 #Prey data (ln(ind. m-2)). N - copepod nauplii; E1 - copepodite stages I-III, E2 - copepodite stages IV-V; E3 - adult copepods. 
 #e - E. affinis affinis; ea - E. affinis affinis & Acartia spp; l - L. macrurus macrurus. t - small cladocerans 
@@ -24,6 +24,7 @@ library(mgcv)
 
 ###################################Mean annual growth age-2
 #Figure 1
+summary(gam(x1 ~ s(l2_E3, k = 4) + s(e_E20, k = 4), data = dat))
 final = gam(x1 ~ s(l2_E3, k = 4) + s(e_E20, k = 4), data = dat)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -32,25 +33,25 @@ set2 = data.frame(sort(unique(dat$l2_E3)))
 names(set2) = "l2_E3"
 set2$e_E20 = mean(dat$e_E20)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ l2_E3, data = dat, col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abund. ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x1 ~ l2_E3, data = dat, col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l2_E3)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l2_E3, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l2_E3, lty = 3)
-mtext("a) partial effect of L. macrurus (Aug, adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of L. macrurus macrurus (August, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat$e_E20))
 names(set2) = "e_E20"
 set2$l2_E3 = mean(dat$l2_E3)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ e_E20, data = dat, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x1 ~ e_E20, data = dat, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E20)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E20, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E20, lty = 3)
-mtext("b) partial effect of E. affinis (prev. May, IV-V)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of E. affinis affinis (prev. May, IV-V)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-3
 #Figure 2
-
+summary(gam(x2 ~ s(l_E1, k = 4) + s(SSB0, k = 4) + s(e_E30, k = 4), data = dat))
 final = gam(x2 ~ s(l_E1, k = 4) + s(SSB0, k = 4) + s(e_E30, k = 4), data=dat)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -60,37 +61,37 @@ names(set2) = "l_E1"
 set2$SSB0 = mean(dat$SSB0)
 set2$e_E30 = mean(dat$e_E30)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ l_E1, data = dat, col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x2 ~ l_E1, data = dat, col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l_E1)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l_E1, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l_E1, lty = 3)
-mtext("a) partial effect of L. macrurus (May, I-III)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of L. macrurus macrurus (May, I-III)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat$SSB0))
 names(set2) = "SSB0"
 set2$l_E1 = mean(dat$l_E1)
 set2$e_E30 = mean(dat$e_E30)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ SSB0, data = dat, col = 1, pch = 16, cex = 1.1, xlab = "Thousand tons", ylab = "g" , axes = T)
+plot(x2 ~ SSB0, data = dat, col = 1, pch = 16, cex = 0.8, xlab = "Thousand tons", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$SSB0)
 lines(pred$fit + 2 * pred$se.fit ~ set2$SSB0, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$SSB0, lty = 3)
-mtext("b) partial effect of prev. year SSB", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of prev. year SSB", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat$e_E30))
 names(set2) = "e_E30"
 set2$l_E1 = mean(dat$l_E1)
 set2$SSB0 = mean(dat$SSB0)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ e_E30, data = dat, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x2 ~ e_E30, data = dat, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E30)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E30, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E30, lty = 3)
-mtext("c) partial effect of E. affinis (prev. May, I-III)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("c) partial effect of E. affinis affinis (prev. May, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-4
 #Figure 3
-
+summary(gam(x3 ~ s(SSB0, k = 4) + s(e_E3, k = 4), data = dat))
 final = gam(x3 ~ s(SSB0, k = 4) + s(e_E3, k = 4), data = dat)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -99,25 +100,25 @@ set2 = data.frame(sort(dat$SSB0))
 names(set2) = "SSB0"
 set2$e_E3 = mean(dat$e_E3)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ SSB0, data = dat, col = 1, pch = 16, cex = 1.1, xlab = "Thousand tons", ylab = "g" , axes = T)
+plot(x3 ~ SSB0, data = dat, col = 1, pch = 16, cex = 0.8, xlab = "Thousand tons", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$SSB0)
 lines(pred$fit + 2 * pred$se.fit ~ set2$SSB0, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$SSB0, lty = 3)
-mtext("a) partial effect of prev. year SSB", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of prev. year SSB", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat$e_E3))
 names(set2) = "e_E3"
 set2$SSB0 = mean(dat$SSB0)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ e_E3, data = dat, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x3 ~ e_E3, data = dat, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E3)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E3, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E3, lty = 3)
-mtext("b) partial effect of E. affinis (May, adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of E. affinis affinis (May, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-5
 #Figure 4
-
+summary(gam(x4 ~ s(ea_E20, k = 4) + s(SSB0, k = 4), data = dat))
 final = gam(x4 ~ s(ea_E20, k = 4) + s(SSB0, k = 4), data = dat)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -126,21 +127,21 @@ set2 = data.frame(sort(dat$ea_E20))
 names(set2) = "ea_E20"
 set2$SSB0 = mean(dat$SSB0)
 pred = predict(final, newdata = set2, se = T)
-plot(x4 ~ ea_E20, data = dat, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x4 ~ ea_E20, data = dat, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$ea_E20)
 lines(pred$fit + 2 * pred$se.fit ~ set2$ea_E20, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$ea_E20, lty = 3)
-mtext("a) partial effect of Acartia spp.& E. affinis (prev. May, IV-V)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of Acartia spp.& E. affinis affinis (prev. May, IV-V)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat$SSB0))
 names(set2) = "SSB0"
 set2$ea_E20 = mean(dat$ea_E20)
 pred = predict(final, newdata = set2, se = T)
-plot(x4 ~ SSB0, data = dat, col = 1, pch = 16, cex = 1.1, xlab = "Thousand tons", ylab = "g" , axes = T)
+plot(x4 ~ SSB0, data = dat, col = 1, pch = 16, cex = 0.8, xlab = "Thousand tons", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$SSB0)
 lines(pred$fit + 2 * pred$se.fit ~ set2$SSB0, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$SSB0, lty = 3)
-mtext("b) partial effect of prev. year SSB", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of prev. year SSB", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ##################################################################################################################################
 #Time-periods TS1 (1961-1988) dat1; TS2 (1989-2020) dat 2
@@ -157,7 +158,7 @@ dat2=dat[idx,]
 
 ###################################Mean annual growth age-2 TS1
 #Figure 5
-
+summary(gam(x1 ~ s(l_N, k = 4) + s(e_E20, k = 5), data = dat1))
 final = gam(x1 ~ s(l_N, k = 4) + s(e_E20, k = 5), data = dat1)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -166,25 +167,25 @@ set2 = data.frame(sort(unique(dat1$l_N)))
 names(set2) = "l_N"
 set2$e_E20 = mean(dat1$e_E20)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ l_N, data = dat1,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x1 ~ l_N, data = dat1,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l_N)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l_N, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l_N, lty = 3)
-mtext("a) partial effect of L. macrurus (May, N)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of L. macrurus macrurus (May, N)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat1$e_E20))
 names(set2) = "e_E20"
 set2$l_N = mean(dat1$l_N)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ e_E20, data = dat1, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x1 ~ e_E20, data = dat1, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E20)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E20, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E20, lty = 3)
-mtext("b) partial effect of E. affinis (prev. May, IV-V)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of E. affinis affinis (prev. May, IV-V)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-2 TS2
 #Figure 6
-
+gam(x1 ~ s(l2_E3, k = 4) + s(ea2_E2, k = 4) + s(ws0, k = 4), data = dat2)
 final = gam(x1 ~ s(l2_E3, k = 4) + s(ea2_E2, k = 4) + s(ws0, k = 4), data = dat2)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -194,37 +195,37 @@ names(set2) = "l2_E3"
 set2$ea2_E2 = mean(dat2$ea2_E2)
 set2$ws0 = mean(dat2$ws0)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ l2_E3, data = dat2,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x1 ~ l2_E3, data = dat2,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l2_E3)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l2_E3, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l2_E3, lty = 3)
-mtext("a) partial effect of L. macrurus (Aug, adutl)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of L. macrurus macrurus (August, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$ea2_E2))
 names(set2) = "ea2_E2"
 set2$l2_E3 = mean(dat2$l2_E3)
 set2$ws0=mean(dat2$ws0)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ ea2_E2, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x1 ~ ea2_E2, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$ea2_E2)
 lines(pred$fit + 2 * pred$se.fit ~ set2$ea2_E2, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$ea2_E2, lty = 3)
-mtext("b) partial effect of Acartia spp. & E. affinis (Aug, IV-V)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of Acartia spp. & E. affinis affinis (August, IV-V)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$ws0))
 names(set2) = "ws0"
 set2$l2_E3 = mean(dat2$l2_E3)
 set2$ea2_E2=mean(dat2$ea2_E2)
 pred = predict(final, newdata = set2, se = T)
-plot(x1 ~ ws0, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = "Sum of neg. daily air temp.(°C)", ylab = "g" , axes = T)
+plot(x1 ~ ws0, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = "Sum of neg. daily air temp.(°C)", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$ws0)
 lines(pred$fit + 2 * pred$se.fit ~ set2$ws0, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$ws0, lty = 3)
-mtext("b) partial effect of prev. winter severity", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of prev. winter severity", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-3 TS1
 #Figure 7
-
+summary(gam(x2 ~ s(l_E1, k=4) + s(e_E30, k = 4), data = dat1))
 final = gam(x2 ~ s(l_E1, k = 4) + s(e_E30, k = 4), data = dat1)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -233,25 +234,25 @@ set2 = data.frame(sort(unique(dat1$l_E1)))
 names(set2) = "l_E1"
 set2$e_E30 = mean(dat1$e_E30)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ l_E1, data = dat1,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x2 ~ l_E1, data = dat1,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l_E1)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l_E1, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l_E1, lty = 3)
-mtext("a) partial effect of L. macrurus (May, I-III)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of L. macrurus macrurus (May, I-III)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat1$e_E30))
 names(set2) = "e_E30"
 set2$l_E1 = mean(dat1$l_E1)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ e_E30, data = dat1, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x2 ~ e_E30, data = dat1, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E30)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E30, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E30, lty = 3)
-mtext("b) partial effect of E. affinis (prev. May adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of E. affinis affinis (prev. May adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-3 TS2
 #Figure 8
-
+summary(gam(x2 ~ s(SSB, k = 4) + s(e2_E30, k = 4) + s(l_E1, k = 4), data = dat2))
 final = gam(x2 ~ s(SSB, k = 4) + s(e2_E30, k = 4) + s(l_E1, k = 4), data = dat2)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -261,37 +262,37 @@ names(set2) = "SSB"
 set2$e2_E30 = mean(dat2$e2_E30)
 set2$l_E1 = mean(dat2$l_E1)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ SSB, data = dat2,col = 1, pch = 16, cex = 1.1 , xlab = "Thousand tons", ylab = "g" , axes = T)
+plot(x2 ~ SSB, data = dat2,col = 1, pch = 16, cex = 0.8 , xlab = "Thousand tons", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$SSB)
 lines(pred$fit + 2 * pred$se.fit ~ set2$SSB, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$SSB, lty = 3)
-mtext("a) partial effect of SSB", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of SSB", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$e2_E30))
 names(set2) = "e2_E30"
 set2$l_E1 = mean(dat2$l_E1)
 set2$SSB=mean(dat2$SSB)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ e2_E30, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x2 ~ e2_E30, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e2_E30)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e2_E30, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e2_E30, lty = 3)
-mtext("b) partial effect of E. affinis (prev. Aug, adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of E. affinis affinis (prev. August, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$l_E1))
 names(set2) = "l_E1"
 set2$e2_E30 = mean(dat2$e2_E30)
 set2$SSB=mean(dat2$SSB)
 pred = predict(final, newdata = set2, se = T)
-plot(x2 ~ l_E1, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x2 ~ l_E1, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l_E1)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l_E1, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l_E1, lty = 3)
-mtext("c) partial effect of L. macrurus (May, I-III)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("c) partial effect of L. macrurus macrurus (May, I-III)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-4 TS1
 #Figure 9
-
+summary(gam(x3 ~ s(l2_E30, k = 4) + s(e2_E1, k = 4), data = dat1))
 final = gam(x3 ~ s(l2_E30, k = 4) + s(e2_E1, k = 4), data = dat1)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -300,25 +301,25 @@ set2 = data.frame(sort(unique(dat1$l2_E30)))
 names(set2) = "l2_E30"
 set2$e2_E1 = mean(dat1$e2_E1)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ l2_E30, data = dat1,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x3 ~ l2_E30, data = dat1,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l2_E30)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l2_E30, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l2_E30, lty = 3)
-mtext("a) partial effect of L. macrurus (prev. Aug, adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of L. macrurus macrurus (prev. August, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat1$e2_E1))
 names(set2) = "e2_E1"
 set2$l2_E30 = mean(dat1$l2_E30)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ e2_E1, data = dat1, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x3 ~ e2_E1, data = dat1, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e2_E1)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e2_E1, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e2_E1, lty = 3)
-mtext("b) partial effect of E. affinis (Aug I-III)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of E. affinis affinis (August I-III)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-4 TS2
 #Figure 10
-
+summary(gam(x3 ~ s(e_E30, k = 4) + s(l_E1, k = 4)+ s(ws, k = 4), data = dat2))
 final = gam(x3 ~ s(e_E30, k = 4) + s(l_E1, k = 4)+ s(ws, k = 4), data = dat2)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(2, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -328,37 +329,37 @@ names(set2) = "e_E30"
 set2$l_E1 = mean(dat2$l_E1)
 set2$ws = mean(dat2$ws)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ e_E30, data = dat2,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x3 ~ e_E30, data = dat2,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E30)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E30, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E30, lty = 3)
-mtext("a) partial effect of E. affinis (prev. May, adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of E. affinis affinis (prev. May, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$l_E1))
 names(set2) = "l_E1"
 set2$e_E30 = mean(dat2$e_E30)
 set2$ws=mean(dat2$ws)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ l_E1, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x3 ~ l_E1, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l_E1)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l_E1, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l_E1, lty = 3)
-mtext("b) partial effect of L. macrurus (May, I-III)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of L. macrurus macrurus (May, I-III)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$ws))
 names(set2) = "ws"
 set2$e_E30 = mean(dat2$e_E30)
 set2$l_E1=mean(dat2$l_E1)
 pred = predict(final, newdata = set2, se = T)
-plot(x3 ~ ws, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = "Sum of neg. daily air temp.(°C)", ylab = "g" , axes = T)
+plot(x3 ~ ws, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = "Sum of neg. daily air temp.(°C)", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$ws)
 lines(pred$fit + 2 * pred$se.fit ~ set2$ws, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$ws, lty = 3)
-mtext("c) partial effect of winter severity", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("c) partial effect of winter severity", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-5 TS1
 #Figure 11
-
+summary(gam(x4 ~ s(ea_E30, k = 4) + s(l_E20, k = 4), data = dat1))
 final = gam(x4 ~ s(ea_E30, k = 4) + s(l_E20, k = 4), data = dat1)
 quartz(width = 6.8, height = 4)
 par(mfrow = c(1, 2), tck = -0.02, mar = c(2.5, 2.7, 1.8, 1), mgp = c(1.3,0.3,0), cex.lab = 1.1, cex.axis = 1)
@@ -367,21 +368,21 @@ set2 = data.frame(sort(dat1$ea_E30))
 names(set2) = "ea_E30"
 set2$l_E20 = mean(dat1$l_E20)
 pred = predict(final, newdata = set2, se = T)
-plot(x4 ~ ea_E30, data = dat1, col = 1, pch = 16, cex = 1.1, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x4 ~ ea_E30, data = dat1, col = 1, pch = 16, cex = 0.8, xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$ea_E30)
 lines(pred$fit + 2 * pred$se.fit ~ set2$ea_E30, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$ea_E30, lty = 3)
-mtext("a) partial effect of Acartia spp. & E. affinis (prev. May adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of Acartia spp. & E. affinis affinis (prev. May adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(unique(dat1$l_E20)))
 names(set2) = "l_E20"
 set2$ea_E30 = mean(dat1$ea_E30)
 pred = predict(final, newdata = set2, se = T)
-plot(x4 ~ l_E20, data = dat1,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x4 ~ l_E20, data = dat1,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$l_E20)
 lines(pred$fit + 2 * pred$se.fit ~ set2$l_E20, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$l_E20, lty = 3)
-mtext("b) partial effect of L. macrurus (prev. May, IV-V)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of L. macrurus macrurus (prev. May, IV-V)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 ###################################Mean annual growth age-5 TS2
 #Figure 12
@@ -394,21 +395,21 @@ set2 = data.frame(sort(unique(dat2$e_E3)))
 names(set2) = "e_E3"
 set2$SSB0 = mean(dat2$SSB0)
 pred = predict(final, newdata = set2, se = T)
-plot(x4 ~ e_E3, data = dat2,col = 1, pch = 16, cex = 1.1 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
+plot(x4 ~ e_E3, data = dat2,col = 1, pch = 16, cex = 0.8 , xlab = expression(paste("Abundance ln(ind. ",m**-2,")")), ylab = "g" , axes = T)
 lines(pred$fit ~ set2$e_E3)
 lines(pred$fit + 2 * pred$se.fit ~ set2$e_E3, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$e_E3, lty = 3)
-mtext("a) partial effect of E. affinis (May, adult)", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("a) partial effect of E. affinis affinis (May, adult)", side = 3, line  = 0.2, cex = 1, adj = 0)
 
 set2 = data.frame(sort(dat2$SSB0))
 names(set2) = "SSB0"
 set2$e_E3 = mean(dat2$e_E3)
 pred = predict(final, newdata = set2, se = T)
-plot(x4 ~ SSB0, data = dat2, col = 1, pch = 16, cex = 1.1, xlab = "Thousand tons", ylab = "g" , axes = T)
+plot(x4 ~ SSB0, data = dat2, col = 1, pch = 16, cex = 0.8, xlab = "Thousand tons", ylab = "g" , axes = T)
 lines(pred$fit ~ set2$SSB0)
 lines(pred$fit + 2 * pred$se.fit ~ set2$SSB0, lty = 3)
 lines(pred$fit - 2 * pred$se.fit ~ set2$SSB0, lty = 3)
-mtext("b) partial effect of prev. SSB", side = 3, line  = 0.2, cex = .8, adj = 0)
+mtext("b) partial effect of prev. SSB", side = 3, line  = 0.2, cex = 1, adj = 0)
 ###################################
 #END OF CODE
 
