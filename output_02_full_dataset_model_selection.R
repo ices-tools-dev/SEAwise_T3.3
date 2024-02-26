@@ -55,20 +55,22 @@ for(area in names(allSTKs)){
   mods5 <- mods4
   mods5$value[mods5$value==0]=NA
   
-  laa <- data.frame(stock = allSTKs[[area]], variable = "SSB", value= NA, scen="laaGrowth")
-    
-  # add in laaGrowth models
-  for (i in 1:nrow(laa)){
-    try(rm("gFit"))
-    tmp <- try(load(paste0("model/fit_by_stk_n_method/", laa[i,"stock"], "_laaGrowth.Rdata")))
-    if(!inherits(tmp, "try-error")){
-      if(!is.na(coef(gFit)["C1"])){
-        laa[i,"value"] <- coef(gFit)["C1"]
-      }
-    }
-  }
-  mods6 <- rbind(mods5, laa)
+  # laa <- data.frame(stock = allSTKs[[area]], variable = "SSB", value= NA, scen="laaGrowth")
+  #   
+  # # add in laaGrowth models
+  # for (i in 1:nrow(laa)){
+  #   try(rm("gFit"))
+  #   tmp <- try(load(paste0("model/fit_by_stk_n_method/", laa[i,"stock"], "_laaGrowth.Rdata")))
+  #   if(!inherits(tmp, "try-error")){
+  #     if(!is.na(coef(gFit)["C1"])){
+  #       laa[i,"value"] <- coef(gFit)["C1"]
+  #     }
+  #   }
+  # }
+  # mods6 <- rbind(mods5, laa)
 
+  mods6 <- mods5
+  
   ggplot(mods6, aes(y=scen, x=value))+
     geom_point(position = position_dodge(width=.75))+theme_bw()+
     facet_grid(stock~variable)+
