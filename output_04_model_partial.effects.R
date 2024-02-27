@@ -47,7 +47,7 @@ load("data/lutLWcoefs.Rdata")
 #                   c("whg.27.7b-ce-k","glmmTMB_AICc"))) #"glmmTMB_GAMM_AICc")))
 
 load("output/stocks and methods with forecasting potential.Rdata")
-model.lut = potential
+model.lut = potential.braod[,c(2,1)]
 names(model.lut) = c("stock","model")
 
 mods = list.files("./model/fit_by_stk_n_method/",pattern = "*.Rdata")
@@ -150,31 +150,32 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
   pdp_out = do.call(rbind,pdp_out.all)
   median_pdp = do.call(rbind,median_pdp.all)
   vars = vars[!grepl("I\\(",vars)]
-  vars_pdp = melt(xy[,c("y","age",vars[!grepl(":",vars)]),drop = F],id.vars = c("y","age"))
-  #vars_pdp = melt(xy,id.vars = c("y","age"))
-  if("age" %in% vars){
-  # add age as variable
-  vars_age = melt(xy[,c("y","age"),drop = F],id.vars = c("y"))
-  vars_age$age = vars_age$value
-  vars_age = vars_age[,colnames(vars_pdp)]
-  vars_pdp = rbind(vars_age,vars_pdp)
+  if("age" %in% names(xy)){
+    vars_pdp = melt(xy[,c("y","age",vars[!grepl(":",vars)]),drop = F],id.vars = c("y","age"))
+    if("age" %in% vars){
+      # add age as variable
+      vars_age = melt(xy[,c("y","age"),drop = F],id.vars = c("y"))
+      vars_age$age = vars_age$value
+      vars_age = vars_age[,colnames(vars_pdp)]
+      vars_pdp = rbind(vars_age,vars_pdp)
+    }
+    col_age = colorspace::sequential_hcl(n = length(unique(vars_pdp$age)),palette = "Purple-Yellow",rev = T)
+  } else {
+    col_age = "gray90"
+    pdp_out$age = NA
+    vars_pdp = melt(xy[,c("y",vars[!grepl(":",vars)]),drop = F],id.vars = c("y"))
+    vars_pdp$age = NA
   }
   if(log.space == FALSE){
     vars_pdp$y = exp(vars_pdp$y)
   }
   
-  col_age = colorspace::sequential_hcl(n = length(unique(vars_pdp$age)),palette = "Purple-Yellow",rev = T)
-  
   single.effects = vars[!grepl(":",vars)]
   pdp.plot = list()
   for(i in 1:length(single.effects)){
-    pdp.plot[[i]] = ggplot(pdp_out[pdp_out$variable == single.effects[i],],aes(x = value,y = yhat)) + 
+    p.single = ggplot(pdp_out[pdp_out$variable == single.effects[i],],aes(x = value,y = yhat)) + 
       geom_line(aes(group = yhat.id),alpha = 0.3) +
       geom_line(data = median_pdp[median_pdp$variable == single.effects[i],],aes(x = value,y = yhat),col = "red",linewidth = 2) +
-      geom_point(data = vars_pdp[vars_pdp$variable == single.effects[i],],aes(x = value,y = y,fill = as.factor(age)),
-                 pch = 21,
-                 #fill = "burlywood1",
-                 colour = "gray50") +
       scale_fill_manual(values = col_age) + 
       ggtitle(single.effects[i]) + 
       xlab(single.effects[i]) +
@@ -190,6 +191,15 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
                                                     2,3)),
                                override.aes = list(size = 2)),
              shape = guide_legend(override.aes = list(size = 2))) 
+    if(all(is.na(vars_pdp$age))){
+      pdp.plot[[i]] = p.single + geom_point(data = vars_pdp[vars_pdp$variable == single.effects[i],],aes(x = value,y = y),
+                                            pch = 21,color = "gray50",fill = "burlywood")
+    } else {
+      pdp.plot[[i]] = p.single  + geom_point(data = vars_pdp[vars_pdp$variable == single.effects[i],],aes(x = value,y = y,fill = as.factor(age)),
+                                             pch = 21,colour = "gray50") 
+    }
+    
+    
   }
   if(length(interaction_plot)>0){
     all.plots = c(pdp.plot,interaction_plot)
