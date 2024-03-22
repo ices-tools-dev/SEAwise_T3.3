@@ -15,7 +15,7 @@ allSTKs <- list(
 )
 
 #completed forecast evaluations
-models <- list.files("model/")
+models <- list.files("NEA/model/")
 results <- models[grep("_res_full.Rdata", models)]
 completedSTKs <- unlist(lapply(strsplit(results, split = "_"), function(x){x[1]}))
   
@@ -27,7 +27,7 @@ for(area in names(allSTKs)){
   allstks <- list()
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res_full.Rdata"))
+    load(paste0("NEA/model/", stk, "_res_full.Rdata"))
     res <- transform(res, fitYear = year-fcYear)
     sums <-  ddply(res, ~ fitYear +mod, summarize, 
                    mse = mean((w2.orig-w2)^2), 
@@ -60,7 +60,7 @@ for(area in names(allSTKs)){
     #  guides(lty=guide_legend(title="recruit \nweights"))+
     facet_grid(stk~., scale="free")+
     xlab("Forecast Origin")
-  ggsave(paste0("output/figures/model_evaluation/model_mean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
+  ggsave(paste0("NEA/output/figures/model_evaluation/model_mean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
   
   
   ggplot(subset(both_by_year, mod !="naive"), aes(fitYear, rel_rmse))+
@@ -71,14 +71,14 @@ for(area in names(allSTKs)){
     #  guides(lty=guide_legend(title="recruit \nweights"))+
     facet_grid(stk~., scale="free")+
     xlab("Forecast Origin")
-  ggsave(paste0("output/figures/model_evaluation/model_rtmean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
+  ggsave(paste0("NEA/output/figures/model_evaluation/model_rtmean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
   
   ## summarize by fcClass -----
 
   allres <- list()
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res_full.Rdata"))
+    load(paste0("NEA/model/", stk, "_res_full.Rdata"))
     res <- transform(res, fitYear = year-fcYear)
     res <- subset(res, fitYear<=2019)
     sums <-  ddply(res, ~ fcClass +mod, summarize,
@@ -110,7 +110,7 @@ for(area in names(allSTKs)){
     ylab(expression(RMSE[modeled]/RMSE[naive]))+
     geom_hline(yintercept = 1)
   #  guides(colour=guide_legend(title="recruit \nweights"))
-  ggsave(paste0("output/figures/model_evaluation/model_relative_rt_mean_sq_err_", area, ".png"), height=7, width=5)
+  ggsave(paste0("NEA/output/figures/model_evaluation/model_relative_rt_mean_sq_err_", area, ".png"), height=7, width=5)
   
   ggplot(subset(both_by_fcClass, mod !="naive"), aes(mod, rel_mae))+
     facet_grid(stk~fcClass, scale="free")+
@@ -121,12 +121,12 @@ for(area in names(allSTKs)){
     ylab(expression(MAE[modeled]/MAE[naive]))+
     geom_hline(yintercept = 1)
   #  guides(colour=guide_legend(title="recruit \nweights"))
-  ggsave(paste0("output/figures/model_evaluation/model_relative_mean_abs_err_", area, ".png"), height=5, width=6)
+  ggsave(paste0("NEA/output/figures/model_evaluation/model_relative_mean_abs_err_", area, ".png"), height=5, width=6)
   
   ## summarize by model only -------------
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res_full.Rdata"))
+    load(paste0("NEA/model/", stk, "_res_full.Rdata"))
     res <- ddply(res, ~mod+fcYear, mutate,
                  nfc = length(err)) #number of forecast horizons of that length
     
@@ -157,13 +157,13 @@ for(area in names(allSTKs)){
     ylab(expression(MAE[modeled]/MAE[naive]))+
     geom_hline(yintercept = 1)
   #  guides(colour=guide_legend(title="recruit \nweights"))
-  ggsave(paste0("output/figures/model_evaluation/model_overall_relative_mean_abs_err_", area, ".png"), height=7, width=5)
+  ggsave(paste0("NEA/output/figures/model_evaluation/model_overall_relative_mean_abs_err_", area, ".png"), height=7, width=5)
   
 } #end area loop
 
 
 for(stk in completedSTKs){
-  load(paste0("model/", stk, "_res_full.Rdata"))
+  load(paste0("NEA/model/", stk, "_res_full.Rdata"))
   res <- ddply(res, ~mod+fcYear, mutate,
                nfc = length(err)) #number of forecast horizons of that length
   
@@ -188,4 +188,4 @@ tmp <- reshape::melt(predw1lm[,c("mod" , "stk", "rel_mae")],
 (potential = ddply(subset(tmp, value<1, drop = TRUE), ~stk, summarize, 
                    method = mod[which.min(value)]))
 
-save(potential, file="output/stocks and models with forecasting potential.Rdata")
+save(potential, file="NEA/output/stocks and models with forecasting potential.Rdata")

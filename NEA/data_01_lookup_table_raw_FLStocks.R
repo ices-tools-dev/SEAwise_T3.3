@@ -7,10 +7,10 @@ rm(list = ls())
 # 1. generate list of files --------------------------------------------------
 
 res <- list()
-for(i in seq(list.files("data/FLStocks_in/"))){
-  path.i <- list.files("data/FLStocks_in/", full.names = T)[i]
+for(i in seq(list.files("NEA/data/FLStocks_in/"))){
+  path.i <- list.files("NEA/data/FLStocks_in/", full.names = T)[i]
   res[[length(res)+1]] <- data.frame(
-    casestudy = list.files("data/FLStocks_in/")[i],
+    casestudy = list.files("NEA/data/FLStocks_in/")[i],
     path = list.files(path.i, full.names = T), 
     fname = list.files(path.i))
 }
@@ -212,7 +212,7 @@ length(df$stockcode)
 
 lutFLStocks <- df
 
-save(lutFLStocks, file = "data/lutFLStocks.Rdata")
+save(lutFLStocks, file = "NEA/data/lutFLStocks.Rdata")
 
 
 

@@ -6,7 +6,7 @@ rm(list = ls())
 
 # 1. plots of fc performance by year and window (short, med., & long) --------
 
-load("data/lutFLStocks.Rdata")
+load("NEA/data/lutFLStocks.Rdata")
 
 STKs <- sort(lutFLStocks$stockcode)
 STKs <- STKs[-which(STKs=="ane.27.8")]
@@ -15,7 +15,7 @@ STKs <- STKs[-which(STKs=="ane.27.8")]
 
 for(stk in STKs){
   # load results object
-  load(file = paste0("model/", stk, "_res.Rdata"))
+  load(file = paste0("NEA/model/", stk, "_res.Rdata"))
 
   # calculate error quantiles - error ~ model + forecast_years
   tmp <- aggregate(rerr ~ mod + fcYear, data = res, 
@@ -41,7 +41,7 @@ for(stk in STKs){
     ylab("rerr") 
   # p
    
-  png(paste0("output/figures/", stk, "_fc_rerr~mod+fcYear.png"), width = 6, height = 5, units = "in", res = 400)
+  png(paste0("NEA/output/figures/", stk, "_fc_rerr~mod+fcYear.png"), width = 6, height = 5, units = "in", res = 400)
     print(p)
   dev.off()
   
@@ -71,7 +71,7 @@ for(stk in STKs){
     ylab("rerr") 
   # p
   
-  png(paste0("output/figures/", stk, "_fc_rerr~fcClass+mod+year.png"), width = 7, height = 4, units = "in", res = 400)
+  png(paste0("NEA/output/figures/", stk, "_fc_rerr~fcClass+mod+year.png"), width = 7, height = 4, units = "in", res = 400)
     print(p)
   dev.off()
 }
@@ -85,7 +85,7 @@ for(stk in STKs){
 RES <- vector("list", length(STKs))
 names(RES) <- STKs
 for(stk in STKs){
-  load(file = paste0("model/", stk, "_res.Rdata"))
+  load(file = paste0("NEA/model/", stk, "_res.Rdata"))
   RES[[stk]] <- res
 }
 
@@ -100,7 +100,7 @@ df[,3:4] <- t(apply(df[,3:4], 1, FUN = function(x){
   paste0(sprintf(an(x), fmt = "%.3f"), ifelse(seq(x) %in% hit, "*", " "))
 }))
 df
-write.csv(df, file = "output/laaGrowth_naive_vs_model_err.csv")
+write.csv(df, file = "NEA/output/laaGrowth_naive_vs_model_err.csv")
 
 B <- vector("list", length(STKs))
 names(B) <- STKs
@@ -110,4 +110,4 @@ for(stk in STKs){
 B <- do.call("rbind", B)
 rownames(B) <- seq(nrow(B))
 B
-write.csv(df, file = "output/laaGrowth_best_by_nFitYear.csv")
+write.csv(df, file = "NEA/output/laaGrowth_best_by_nFitYear.csv")

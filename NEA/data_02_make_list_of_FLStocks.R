@@ -5,7 +5,7 @@ rm(list = ls())
 
 # 1. load files ----------------------------------------------------------
 
-load(file = "data/lutFLStocks.Rdata")
+load(file = "NEA/data/lutFLStocks.Rdata")
 
 
 
@@ -39,7 +39,7 @@ close(pb)
 
 # 3. summary plot ---------------------------------------------------------
 
-pdf("data/FLStock_summaries.pdf", width = 7, height = 5, onefile = T)
+pdf("NEA/data/FLStock_summaries.pdf", width = 7, height = 5, onefile = T)
 for(i in seq(stks)){
   p1 <- plot(stks[[i]]$stock)
   # p1 <- p1 + ggtitle(stks[[i]]$stockcode)
@@ -62,5 +62,5 @@ dev.off()
 
 # 4. save -----------------------------------------------------------------
 
-save(stks, file = "data/FLStocks_list_stks.Rdata")
+save(stks, file = "NEA/data/FLStocks_list_stks.Rdata")
 

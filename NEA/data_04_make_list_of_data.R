@@ -5,12 +5,12 @@ rm(list = ls())
 
 # 1. load files ----------------------------------------------------------
 
-load(file = "data/FLStocks_list_stks.Rdata")
-load(file = "data/lutYearAge.Rdata")
-load(file = "data/lutLWcoefs.Rdata")
+load(file = "NEA/data/FLStocks_list_stks.Rdata")
+load(file = "NEA/data/lutYearAge.Rdata")
+load(file = "NEA/data/lutLWcoefs.Rdata")
 
-envTemp <- readRDS("./data/env/ORAS5_AnnualTEMPByDemPelStock3.RDS")
-envSal <- readRDS("./data/env/ORAS5_AnnualSALByDemPelStock3.RDS")
+envTemp <- readRDS("./NEA/data/env/ORAS5_AnnualTEMPByDemPelStock3.RDS")
+envSal <- readRDS("./NEA/data/env/ORAS5_AnnualSALByDemPelStock3.RDS")
 
 # # temporary fix !!!
 # envTemp$sol.27.7e <- envTemp$sol.27.7fg
@@ -130,5 +130,5 @@ close(pb)
 
 # 3. save -----------------------------------------------------------------
 
-save(DF, file = "data/data_list_DF.Rdata")
+save(DF, file = "NEA/data/data_list_DF.Rdata")
 

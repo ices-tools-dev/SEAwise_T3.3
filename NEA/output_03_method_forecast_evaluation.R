@@ -15,7 +15,7 @@ allSTKs <- list(
 )
 
 #completed forecast evaluations
-models <- list.files("model/")
+models <- list.files("NEA/model/")
 results <- models[grep("_res.Rdata", models)]
 completedSTKs <- unlist(lapply(strsplit(results, split = "_"), function(x){x[1]}))
   
@@ -27,7 +27,7 @@ for(area in names(allSTKs)){
   allstks <- list()
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res.Rdata"))
+    load(paste0("NEA/model/", stk, "_res.Rdata"))
     res <- transform(res, fitYear = year-fcYear)
     sums <-  ddply(res, ~ fitYear +mod, summarize, 
                    mse = mean((w2.orig-w2)^2), 
@@ -60,7 +60,7 @@ for(area in names(allSTKs)){
     #  guides(lty=guide_legend(title="recruit \nweights"))+
     facet_grid(stk~., scale="free")+
     xlab("Forecast Origin")
-  ggsave(paste0("output/figures/method_evaluation/method_mean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_mean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
   
   
   ggplot(subset(both_by_year, mod !="naive"), aes(fitYear, rel_rmse))+
@@ -71,14 +71,14 @@ for(area in names(allSTKs)){
     #  guides(lty=guide_legend(title="recruit \nweights"))+
     facet_grid(stk~., scale="free")+
     xlab("Forecast Origin")
-  ggsave(paste0("output/figures/method_evaluation/method_rtmean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_rtmean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
   
   ## summarize by fcClass -----
 
   allres <- list()
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res.Rdata"))
+    load(paste0("NEA/model/", stk, "_res.Rdata"))
     res <- transform(res, fitYear = year-fcYear)
     res <- subset(res, fitYear<=2019)
     sums <-  ddply(res, ~ fcClass +mod, summarize,
@@ -110,7 +110,7 @@ for(area in names(allSTKs)){
     ylab(expression(RMSE[modeled]/RMSE[naive]))+
     geom_hline(yintercept = 1)
   #  guides(colour=guide_legend(title="recruit \nweights"))
-  ggsave(paste0("output/figures/method_evaluation/method_relative_rt_mean_sq_err by fcClass", area, ".png"), height=7, width=5)
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_relative_rt_mean_sq_err by fcClass", area, ".png"), height=7, width=5)
   
   ggplot(subset(both_by_fcClass, mod !="naive"), aes(mod, rel_mae))+
     facet_grid(stk~fcClass, scale="free")+
@@ -121,12 +121,12 @@ for(area in names(allSTKs)){
     ylab(expression(MAE[modeled]/MAE[naive]))+
     geom_hline(yintercept = 1)
   #  guides(colour=guide_legend(title="recruit \nweights"))
-  ggsave(paste0("output/figures/method_evaluation/method_relative_mean_abs_err by fcClass", area, ".png"), height=5, width=6)
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_relative_mean_abs_err by fcClass", area, ".png"), height=5, width=6)
   
   ## summarize by method only -------------
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res.Rdata"))
+    load(paste0("NEA/model/", stk, "_res.Rdata"))
     res <- ddply(res, ~mod+fcYear, mutate,
                  nfc = length(err)) #number of forecast horizons of that length
     
@@ -157,7 +157,7 @@ for(area in names(allSTKs)){
     ylab(expression(MAE[modeled]/MAE[naive]))+
     geom_hline(yintercept = 1)
   #  guides(colour=guide_legend(title="recruit \nweights"))
-  ggsave(paste0("output/figures/method_evaluation/method_overall_relative_mean_abs_err_", area, ".png"), height=7, width=5)
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_overall_relative_mean_abs_err_", area, ".png"), height=7, width=5)
   
 } #end area loop
 
@@ -167,7 +167,7 @@ for(area in names(allSTKs)){
 allstks <- list()
 
  for(stk in completedSTKs){
-  load(paste0("model/", stk, "_res.Rdata"))
+  load(paste0("NEA/model/", stk, "_res.Rdata"))
   res <- ddply(res, ~mod+fcYear, mutate,
                nfc = length(err)) #number of forecast horizons of that length
   
@@ -194,7 +194,7 @@ potential.braod <- subset(tmp, value<1, drop = TRUE)
 (potential <- ddply(potential.braod, ~stk, summarize, 
                    method = mod[which.min(value)]))
 
-save(potential, potential.braod, file="output/stocks and methods with forecasting potential.Rdata")
+save(potential, potential.braod, file="NEA/output/stocks and methods with forecasting potential.Rdata")
 
 ggplot(potential.braod, aes(mod, value))+   
   xlab(NULL)+
@@ -204,7 +204,7 @@ ggplot(potential.braod, aes(mod, value))+
   facet_wrap(~stk, scale="free")+
   geom_point()
   
-ggsave("output/figures/stocks and methods with forecasting potential.png", height=10, width=7)
+ggsave("NEA/output/figures/stocks and methods with forecasting potential.png", height=10, width=7)
 #   
 # load("model/allGAMMs.Rdata", verbose = TRUE)
 # names(RES) = unlist(lapply(strsplit(names(RES), split = "_"), function(x){x[1]}))

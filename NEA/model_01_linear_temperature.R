@@ -1,3 +1,6 @@
+#This file does forecast evaluation of the models without 
+#quadratic and spline temperature terms to check
+#if those terms are needed.
 # 0. clean-up ----------------------------------------------------------------
 
 rm(list = ls())
@@ -5,20 +8,22 @@ rm(list = ls())
 
 
 # 1. load data objects -------------------------------------------------------
-load("data/data_list_DF.Rdata")
-load("data/lutLWcoefs.Rdata")
+load("NEA/data/data_list_DF.Rdata")
+load("NEA/data/lutLWcoefs.Rdata")
 
-# 2. required functions ---------------------------------------------------
+# 2. required packages ---------------------------------------------------
+
 
 library(emulator)
 library(miscTools)
 library(penalized)
 library(quadprog)
 library(lmmlasso)
-library(lmmen) # fork that handles multiple RE
-library(cv.glmmLasso) # fork that handles multiple RE
+library(lmmen) 
+library(cv.glmmLasso) 
+library(doParallel)
+library(MuMIn)
 library(glmmTMB)
-source("R/laaGrowth.R") # function to fit length increment growth models
 
 # 3. set-up ------------------------------------------------------------------
 
@@ -28,34 +33,41 @@ nTry <- 20 # for use in laaGrowth models
 nYearsNaive <- 3 # number of data years to use for naive model fitting
       
 # scenarios / models
-scen <- data.frame(name = c("naive", "laaGrowth", "lasso_BIC", 
+scen <- data.frame(name = c("naive", "lasso_BIC", 
   "lasso_CV10perc",  "lasso_CV20perc", "glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
 
 # LMM inputs
 #global model of weight-at-age without random effects
-fullform <- logw2~logw + age+I(age^2)+I(age^3) + sal.s + ssb.s + temp.s +I(temp.s^2) + 
+fullform <- logw2~logw + age+I(age^2)+I(age^3) + sal.s + ssb.s + temp.s + 
   logw:age +  logw:sal.s + logw:ssb.s + logw:temp.s
 
 #global model of weight-at-age with random effects
-fullformRE <- logw2~logw + age+I(age^2)+I(age^3) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
+fullformRE <- logw2~logw + age+I(age^2)+I(age^3) + sal.s  + ssb.s + temp.s  + 
   logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
 
 #global model of weight-at-age GAMM
-fullformGAMM <- logw2~logw + s(age, k=3) + sal.s  + ssb.s + s(temp.s, k=3)  + 
+fullformGAMM <- logw2~logw + s(age, k=3) + sal.s  + ssb.s  + temp.s  +
 	logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
 
 #global model of recruit weights 
-fullform.rec <- logw ~ sal.s + ssb.s + temp.s + I(temp.s^2) 
-fullformGAM.rec <- logw ~ sal.s + ssb.s + s(temp.s, k=3) 
+fullform.rec <- logw ~ sal.s + ssb.s + temp.s  
+fullformGAM.rec <- logw ~ sal.s + ssb.s  temp.s 
 
 #range of penalty terms to try in LASSO methods
 lambdas <-  seq(10, 0, by = -0.5)
+
+#set up cluster 
+ncores <- detectCores() # max available cores
+clusterType <- ifelse(Sys.info()["sysname"] == "Windows", "PSOCK", "FORK")
+mycl <- parallel::makeCluster(ncores, type=clusterType)  
+doParallel::registerDoParallel(mycl)
+invisible(clusterEvalQ(mycl, library(glmmTMB , logical = TRUE)))
 
 # stk - stock loop START --------------------------------------------------------
 
 STKs <- names(DF)[-1]
 for(stk in STKs[1:length(STKs)]){
-  # stk <- "her.27.28" 
+  # stk <- "cod.27.7a"
   print(paste0("Starting ", stk))
   dat <- DF[[stk]]
   
@@ -105,16 +117,12 @@ for(stk in STKs[1:length(STKs)]){
 
       # laaGrowth -----
       if(scen$name[s] == "laaGrowth"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata")) # gFit
-        gFit <- update(gFit, data = dat.train, weights = dat.train$n, control = list(warnOnly = TRUE))
-        # coefficients(gFit)
+        gFit <- laaGrowth(dat = dat.train, nTry = nTry) 
       }
       
       # lasso_BIC -----
       if(scen$name[s] == "lasso_BIC"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
-        
-        gFit <- try(lmmen::cv.glmmLasso(form.fixed=gFit$fix, 
+        gFit <- try(lmmen::cv.glmmLasso(form.fixed=fullform, 
                                     form.rnd = list(yearf=~1, cohortf=~1), 
                                     dat=dat.train, 
                                     lambda = lambdas)$fit.opt)
@@ -123,15 +131,15 @@ for(stk in STKs[1:length(STKs)]){
         }
           
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
-        minage.i <- try(update(minage.i, data=tmp))
+        global.model <- try(glmmTMB(fullform.rec,
+                                    data=tmp, na.action = na.fail))
+        clusterExport(mycl, "tmp")
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }
       
       # lasso_CV10perc -----
       if(scen$name[s] == "lasso_CV10perc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
-        
-        gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=gFit$fix, 
+        gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=fullform, 
                                            rnd = list(yearf=~1, cohortf=~1), 
                                            data=dat.train, 
                                            family = gaussian(link = "identity"), 
@@ -142,15 +150,15 @@ for(stk in STKs[1:length(STKs)]){
         }
           
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
-        minage.i <- try(update(minage.i, data=tmp))
+        global.model <- try(glmmTMB(fullform.rec,
+                                    data=tmp, na.action = na.fail))
+        clusterExport(mycl, "tmp")
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }
       
       # lasso_CV20perc -----
       if(scen$name[s] == "lasso_CV20perc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
-        
-        gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=gFit$fix, 
+        gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=fullform, 
                                            rnd = list(yearf=~1, cohortf=~1), 
                                            data=dat.train, 
                                            family = gaussian(link = "identity"), 
@@ -161,36 +169,44 @@ for(stk in STKs[1:length(STKs)]){
         }
           
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
-        minage.i <- try(update(minage.i, data=tmp))
+        global.model <- try(glmmTMB(fullform.rec,
+                                    data=tmp, na.action = na.fail))
+        clusterExport(mycl, "tmp")
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }
       # glmmTMB_AICc -----
       if(scen$name[s] == "glmmTMB_AICc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
-        
-        gFit <- try(update(gFit, data=dat.train))
+        global.model1 <- try(glmmTMB(fullformRE,
+                                 data=dat.train, na.action = na.fail))
+        clusterExport(mycl, "dat.train")
+        gFit <- try(get.models(dredge(global.model1, rank = "AICc", cluster = mycl), subset= 1)[[1]])
 
         if(inherits(gFit, "try-error")){
           cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
         }
         
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
-        minage.i <- try(update(minage.i, data=tmp))
+        global.model <- try(glmmTMB(fullform.rec,
+                                data=tmp, na.action = na.fail))
+        clusterExport(mycl, "tmp")
+        minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }      
       # glmmTMB_GAMM_AICc -----
       if(scen$name[s] == "glmmTMB_GAMM_AICc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
-        
-        gFit <- try(update(gFit, data=dat.train))
-        
+        global.model1 <- try(glmmTMB(fullformGAMM,
+      													 data=dat.train, na.action = "na.fail"))
+      	clusterExport(mycl, "dat.train")
+      	gFit <- try(get.models(dredge(global.model1, rank = "AICc", cluster = mycl), subset= 1)[[1]])
+      	
       	if(inherits(gFit, "try-error")){
       	  cat(paste0("\n Error with stock ", stk, " scenario ", scen$name[s], ".\n"))
       	}
       	
       	tmp <- subset(dat.train, age==minage)
-      	load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
-      	minage.i <- try(update(minage.i, data=tmp))
+      	global.model <- try(glmmTMB(fullformGAM.rec,
+      	                            data=tmp, na.action = na.fail))
+      	clusterExport(mycl, "tmp")
+      	minage.i <- try(get.models(dredge(global.model, rank = "AICc", cluster = mycl), subset= 1)[[1]])
       }      
       
       # 5. model forecast -----------------------------------------------------
@@ -312,6 +328,7 @@ for(stk in STKs[1:length(STKs)]){
         dat.valid$fcYear <- dat.valid$year - maxDataYear # number of forecast years from last traing year
         dat.valid$nFitYear <- length(unique(dat.train$year)) # number of training years
         dat.valid$best <-  NA # record the name of the method, just to fill the space
+        if(scen$name[s] == "laaGrowth"){dat.valid$best <- gFit$name}
         
       } # end of forecast procedure for non-naive models
       
@@ -347,11 +364,12 @@ for(stk in STKs[1:length(STKs)]){
   res$mod <- factor(res$mod, levels = unique(scen$name))
 
   # 6. save results -------------------------------------------------------------------------
-
-  save(res, file = paste0("model/", stk, "_res_full.Rdata"))
+  res_linT <- res
+  save(res_linT, file = paste0("NEA/model/", stk, "_res_linT.Rdata"))
   
 
 } # stk - stock loop END -----
 
+stopCluster(mycl) # stops cluster
 
 

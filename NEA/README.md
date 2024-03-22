@@ -1,8 +1,8 @@
-# SEAwise_T3.3
+# SEAwise_T3.3/NEA (Northeast Atlantic stocks)
 
 ## Description
 
-Files should be run in order: `source("data.R"); source("model.R"); source("output.R");`
+Files should be run in order: `source("NEA/data.R"); source("NEA/model.R"); source("NEA/output.R")`. However, we recommend against running `source("NEA/model.R")` unless it is on a high performance computer with multiple cores because it takes a long time.
 
 -   ***data.R*** - Script to source all data preparation scripts and loads required packages:
     -   *data_01_lookup_table_raw_FLStocks.R* - Creates look-up table (*lutFLStocks.Rdata*) for raw data objects, including standardized stock code, file path, case study, and FLStock object name.
@@ -21,12 +21,9 @@ library(devtools)
 # Archived package on CRAN
 install_version("lmmlasso", version = "0.1-2", repos = "http://cran.us.r-project.org")
 
-# Development version needed for GAMMs
-remotes::install_github("glmmTMB/glmmTMB/glmmTMB")
-
 # Non-CRAN
-# fork that handles multiple RE
+# fork that handles multiple random effects
 install_github("https://github.com/bbolker/lmmen")
-# fork that handles multiple RE
+# fork that handles multiple  random effects
 install_github("https://github.com/mebrooks/cv.glmmLasso")
 ```

@@ -5,12 +5,12 @@ rm(list = ls())
 
 
 # 1. load data objects -------------------------------------------------------
-load("data/data_list_DF.Rdata")
-load("data/lutLWcoefs.Rdata")
+load("NEA/data/data_list_DF.Rdata")
+load("NEA/data/lutLWcoefs.Rdata")
 
 # 2. required functions ---------------------------------------------------
 
-source("R/laaGrowth.R") # function to fit length increment growth models
+source("NEA/R/laaGrowth.R") # function to fit length increment growth models
 
 # 3. set-up ------------------------------------------------------------------
 
@@ -352,7 +352,7 @@ for(stk in STKs[1:length(STKs)]){
 
   # 6. save results -------------------------------------------------------------------------
 
-  save(res, file = paste0("model/", stk, "_res.Rdata"))
+  save(res, file = paste0("NEA/model/", stk, "_res.Rdata"))
   
 
 } # stk - stock loop END -----

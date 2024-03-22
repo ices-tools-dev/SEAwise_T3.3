@@ -54,7 +54,11 @@ rsconnect/
 *.jpeg
 
 # only FLStocks_in folder is synced
-data/*.Rdata
+NEA/data/*.Rdata
+
+
+NEA/output/figures/
+NEA/model/PDPs_finalModels.Rdata
 
 # subsequent folders are not synced
 

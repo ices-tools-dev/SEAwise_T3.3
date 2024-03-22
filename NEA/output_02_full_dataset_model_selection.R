@@ -5,7 +5,7 @@ library(ggplot2)
 
 
 ## organize stock by area -----------
-load("data/data_list_DF.Rdata")
+load("NEA/data/data_list_DF.Rdata")
 modeledSTKs <- names(DF)
   
 allSTKs <- list(
@@ -17,7 +17,7 @@ allSTKs <- list(
   "Biscay"= c("ane.27.8", "hke.27.8c9a", "bss.27.8ab", "pil.27.8abd","pil.27.8c9a" )
 )
 
-load("model/allLMMs.Rdata")
+load("NEA/model/allLMMs.Rdata")
 stks <- ldply(.data =RES, .fun= function(x){x$stk})
 scens <- ldply(.data =RES, .fun= function(x){x$scen})
 
@@ -78,11 +78,11 @@ for(area in names(allSTKs)){
     geom_vline(xintercept=0)
 #    scale_x_continuous(breaks=round(seq(-0.1, 0.05, length=4), 2), labels = round(seq(-0.1, 0.05, length=4), 2))
   
-  ggsave(file.path("output","figures", paste0("full_dataset_best_models_", area,".png")), height=7, width=9)
+  ggsave(file.path("NEA", "output","figures", paste0("full_dataset_best_models_", area,".png")), height=7, width=9)
 }
 
 
-load("model/allrecLMs.Rdata")
+load("NEA/model/allrecLMs.Rdata")
 stks <- unlist(lapply(strsplit(names(REC), split = "_"), function(x){x[1]}))
 scen <- unlist(lapply(names(REC), function(x){substring(x, first=gregexpr("_", x)[[1]][1]+1)}))
 
@@ -117,5 +117,5 @@ for(area in names(allSTKs)){
     geom_vline(xintercept=0)
 #    scale_x_continuous(breaks=round(seq(-0.1, 0.1, length=4), 2), labels = round(seq(-0.1, 0.05, length=4), 2))
   
-  ggsave(file.path("output","figures", paste0("full_dataset_best_models_recruit_weight", area,".png")), height=7, width=7)
+  ggsave(file.path("NEA", "output","figures", paste0("full_dataset_best_models_recruit_weight", area,".png")), height=7, width=7)
 }

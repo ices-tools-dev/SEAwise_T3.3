@@ -4,8 +4,8 @@ rm(list = ls())
 
 
 # 1. make directory ----------------------------------------------------------
-dir.create("output", showWarnings = F)
-dir.create("output/figures", showWarnings = F)
+dir.create("NEA/output", showWarnings = F)
+dir.create("NEA/output/figures", showWarnings = F)
 
 
 # 2. required packages -------------------------------------------------------
@@ -16,8 +16,8 @@ library(FLCore)
 
 # source output scripts ---------------------------------------------------
 
-source("output_01.R")
-source("output_02_full_dataset_model_selection.R")
-source("output_03_method_forecast_evaluation.R")
-source("output_04_model_forecast_evaluation.R")
+source("NEA/output_01.R")
+source("NEA/output_02_full_dataset_model_selection.R")
+source("NEA/output_03_method_forecast_evaluation.R")
+source("NEA/output_04_model_forecast_evaluation.R")
 

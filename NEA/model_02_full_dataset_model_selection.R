@@ -4,17 +4,17 @@ rm(list = ls())
 
 
 # 1. load data objects -------------------------------------------------------
-load("data/data_list_DF.Rdata")
-load("data/lutLWcoefs.Rdata")
+load("NEA/data/data_list_DF.Rdata")
+load("NEA/data/lutLWcoefs.Rdata")
 
 # 2. required functions ---------------------------------------------------
 library(lmmlasso)
-library(lmmen) # fork that handles multiple RE
-library(cv.glmmLasso) # fork that handles multiple RE
+library(lmmen) # 
+library(cv.glmmLasso) 
 library(glmmTMB)
 library(MuMIn)
 library(doParallel)
-source("R/laaGrowth.R") # function to fit length increment growth models
+source("NEA/R/laaGrowth.R") # function to fit length increment growth models
 
 
 # 3. set-up ------------------------------------------------------------------
@@ -89,7 +89,7 @@ for(stk in STKs){
     # laaGrowth -----
     if(scen$name[s] == "laaGrowth"){ 
       gFit <- laaGrowth(dat = dat, nTry = nTry) 
-      save(gFit, file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+      save(gFit, file=paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
     }
     
     # lasso_BIC -----
@@ -112,7 +112,7 @@ for(stk in STKs){
       }
       
       save(gFit, gFit0,  ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
-           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+           file=paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       mod <- summary(gFit0)$coefficients[,"Estimate"]
     }
     
@@ -139,7 +139,7 @@ for(stk in STKs){
         gFit<- gFit0
       }
       save(gFit, gFit0,  ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
-           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+           file=paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       mod <- summary(gFit0)$coefficients[,"Estimate"]
     } 
     
@@ -166,7 +166,7 @@ for(stk in STKs){
         gFit<- gFit0
       }
       save(gFit, gFit0,  ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
-           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+           file=paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       mod <- summary(gFit0)$coefficients[,"Estimate"]
     } 
     
@@ -178,7 +178,7 @@ for(stk in STKs){
       dma1 <- dredge(global.model1, rank = "AICc", cluster=mycl)
       gFit <- get.models(dma1, subset= 1)[[1]]
       save(gFit, ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
-           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+           file=paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       
       mod <- rep(0, length(fixef(global.model1)$cond))
       names(mod) <- names(fixef(global.model1)$cond)
@@ -193,7 +193,7 @@ for(stk in STKs){
       dma1 <- dredge(global.model1, rank = "AICc", cluster=mycl)
       gFit <- get.models(dma1, subset= 1)[[1]]
       save(gFit, ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
-           file=paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
+           file=paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))
       
       mod <- rep(0, length(fixef(global.model1)$cond))
       names(mod) <- names(fixef(global.model1)$cond)
@@ -229,7 +229,7 @@ for(stk in STKs){
       REC[[paste(stk, scen$name[s], sep="_")]] <- mod
     }
     save(minage.i, ssb.mu, ssb.sd, temp.mu, temp.sd, sal.mu, sal.sd, 
-         file=paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))
+         file=paste0("NEA/model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))
     
   } # end of scen loop ----
   
@@ -237,8 +237,8 @@ for(stk in STKs){
 } # end of stk loop ----
 
 
-save(RES, file = paste0("model/allLMMs.Rdata"))
-save(REC, file = paste0("model/allrecLMs.Rdata"))
+save(RES, file = paste0("NEA/model/allLMMs.Rdata"))
+save(REC, file = paste0("NEA/model/allrecLMs.Rdata"))
 
 parallel::stopCluster(mycl)
 

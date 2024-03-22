@@ -4,7 +4,7 @@ rm(list = ls())
 
 # 1. load files ----------------------------------------------------------
 
-load(file = "data/FLStocks_list_stks.Rdata")
+load(file = "NEA/data/FLStocks_list_stks.Rdata")
 
 
 # 2. year and age restrictions  ---------------------------------------------------------------------
@@ -124,5 +124,5 @@ lutLWcoefs
 
 # 4. save --------------------------------------------------------------------
 
-save(lutYearAge, file = "data/lutYearAge.Rdata")
-save(lutLWcoefs, file = "data/lutLWcoefs.Rdata")
+save(lutYearAge, file = "NEA/data/lutYearAge.Rdata")
+save(lutLWcoefs, file = "NEA/data/lutLWcoefs.Rdata")
