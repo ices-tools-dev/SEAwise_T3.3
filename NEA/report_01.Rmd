@@ -43,7 +43,6 @@ options(knitr.kable.NA = '')
 
 
 library(png)
-library(formatR)
 library(knitr)
 library(flextable)
 
