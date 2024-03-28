@@ -1,0 +1,232 @@
+---
+title: "Supplementary materials"
+subtitle: "Figures and Tables"
+
+author: 
+  - Author1
+  - Author2
+  - ...
+
+
+
+output:
+  
+  # pdf_document:
+  #   latex_engine: xelatex
+  #   number_sections: TRUE
+  #   toc_depth: 4
+  #   highlight: tango
+  #   keep_tex:  true
+
+  word_document:
+    toc: true # inclusion will prevent update when .doc is open
+    toc_depth: 4
+    highlight: tango
+    # reference_docx: template.docx # add a template with preferred styles if desired
+
+papersize: a4
+# bibliography: refs.bib
+# csl: style.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE, # TRUE for speed. Remember to empty cache after changes to R code sections
+  cache.path = 'report/cache_report_01/', fig.path  ='report/tex_report_01/',
+  fig.align='center',
+  comment=NA,
+  message=FALSE, warning=FALSE, echo=TRUE,
+  tidy.opts=list(width.cutoff=60), tidy=TRUE # automatically wraps code
+)
+
+options(knitr.kable.NA = '')
+
+
+library(png)
+library(formatR)
+library(knitr)
+library(flextable)
+
+# set global flextable layout
+set_flextable_defaults(
+  font.family = "Palatino Linotype",
+  hansi.family = "Palatino Linotype",
+  cs.family = "Palatino Linotype",
+  font.size = 9,
+  line_spacing = 1,
+  padding = 2,
+  theme_fun = "theme_vanilla",
+  big.mark = "" # no 1000 seperator
+)
+
+
+# set.seed(1)
+iFig = 0
+iTab = 0
+```
+
+\pagebreak
+
+# Introduction
+
+
+# Methods
+
+**Table S`r iTab=iTab+1; iTab`.** List of evaluated stocks.
+
+```{r stocks_table, echo=FALSE, message=FALSE, warning=FALSE}
+load("data/lutFLStocks.Rdata")
+tmp <- lutFLStocks[,c("casestudy", "stockcode")]
+tmp <- lutFLStocks[,c("casestudy", "stockcode")]
+names(tmp)[1] <- "cs_abbr" 
+tmp2 <- data.frame(
+  cs_abbr = c("ns", "is", "cs", "bob", "bs"), 
+  cs_long = c("North Sea", "Irish Sea", "Celtic Sea", "Bay of Biscay", "Baltic Sea"),
+  cs_plotname = c("NS", "IS", "CS", "Biscay", "Baltic"))
+lutFLStocks <- merge(tmp, tmp2)
+  
+
+df <- lutFLStocks[,c("cs_long", "stockcode")]
+df <- df[order(df$cs_long, df$stockcode),]
+names(df) <- c("Case Study", "Stock code")
+# knitr::kable(df, digits = 3, row.names = F)
+# kableExtra::kbl(df, digits = 3, booktabs = T, linesep = "", row.names = F)
+
+# df <- regulartable(df, cwidth = 2)
+qflextable(df)
+```
+
+# Results
+
+## Prediction performance
+
+```{r performance_fcClass_overall, echo=FALSE, fig.width=6, message=FALSE, results="asis"}
+ucs_plotname <- sort(unique(lutFLStocks$cs_plotname))
+for(i in seq(ucs_plotname)){ # loop by case study
+  cs_plotname.i <- ucs_plotname[i]
+  cs_long.i <- lutFLStocks$cs_long[match(cs_plotname.i, lutFLStocks$cs_plotname)]
+  cat("  \n###",  cs_long.i, "case study  \n")
+  
+  # Forecast horizon plot
+  # cat("  \n### Performance by method and forecast horizon  \n")
+  iFig=iFig+1
+  fname <- file.path("output/figures/method_evaluation", 
+    paste0("method_relative_mean_abs_err by fcClass", cs_plotname.i, ".png"))
+  figLegend <- paste0("**Figure S", iFig, ".** ",
+    "Relative mean absolute error (MAE) of predictions by method and forecast horizon in the ",
+    cs_long.i, " case study.")
+  
+  cat(paste0("![](", fname, ")", "{width=5in}"), "  \n")
+  cat(figLegend)
+  cat("  \n")
+  
+  # Overall  plot
+  # cat("  \n### Overall performance by method  \n")
+  iFig=iFig+1
+  fname <- file.path("output/figures/method_evaluation", 
+    paste0("method_overall_relative_mean_abs_err_", cs_plotname.i, ".png"))
+  figLegend <- paste0("**Figure S", iFig, ".** ",
+    "Relative mean absolute error (MAE) of predictions by method in the ",
+    cs_long.i, " case study.")
+  
+  cat(paste0("![](", fname, ")", "{width=5in}"), "  \n")
+  cat(figLegend)
+  cat("  \n")
+  
+  
+}
+```
+
+\pagebreak
+
+## Stocks and methods with forecast potential
+
+
+```{r potential_figure, fig.width=6, echo=FALSE, message=FALSE}
+fname <- file.path("output/figures/stocks and methods with forecasting potential.png")
+tmp <- readPNG(fname)
+knitr::include_graphics(fname, dpi = floor(dim(tmp)[2]/6))
+```
+
+**Figure S`r iFig=iFig+1; iFig`.** Relative mean absolute error (MAE) of predictions for stocks and methods with forecast potential.
+
+
+
+The method with the best performance by stock is listed in Table S`r iTab+1`.
+
+**Table S`r iTab=iTab+1; iTab`.** List of stocks and methods with forecast potential.
+
+```{r potential_table, echo=FALSE}
+load("output/stocks and methods with forecasting potential.Rdata")
+names(potential)[1] <- "stockcode"
+potential <- merge(x = potential, y = lutFLStocks, all.x = TRUE)
+
+df <- potential[,c("cs_long", "stockcode", "method")]
+df <- df[order(df$cs_long, df$stockcode),]
+names(df) <- c("Case Study", "Stock code", "Method")
+# knitr::kable(df, digits = 3, row.names = F)
+# kableExtra::kbl(df, digits = 3, booktabs = T, linesep = "", row.names = F)
+qflextable(df)
+```
+
+\pagebreak
+
+## Partial and marginal effects
+
+The following plots illustrate partial and marginal effects for best performing method with forecast potential by stock. Partial effects plots show effects from all fixed terms, including interaction terms. Marginal effects plots show only the effects of covariates SSB, temperature, and salinity (when included in the final model). Effects of each covariate are evaluated independently by visualizing predictions at historically low and high levels (5% and 95% quantiles, respectively) while other covariates are held at median historical levels. 
+
+
+```{r partial_marginal_plots, echo=FALSE, fig.width=6, message=FALSE, results="asis"}
+ucs_plotname <- sort(unique(potential$cs_plotname))
+for(i in seq(ucs_plotname)){ # loop by case study
+  cs_plotname.i <- ucs_plotname[i]
+  cs_long.i <- potential$cs_long[match(cs_plotname.i, potential$cs_plotname)]
+  cat("  \n###",  cs_long.i, "case study  \n")
+  cat("  \n")
+  
+  ustockcode <- sort(unique(subset(potential, cs_plotname == cs_plotname.i)$stockcode))
+
+  for(j in seq(ustockcode)){ # loop by case study
+    ustockcode.j <- ustockcode[j]
+    methodStr.j <- as.character(potential$method[match(ustockcode.j, potential$stockcode)])
+    # cat(paste0("**", ustockcode.j, "**"), "  \n")
+    cat("  \n####",  ustockcode.j,  "  \n")
+    
+    # Partial effects plot
+    iFig=iFig+1
+    fname <- file.path("output/figures/partialEffects",
+      paste0("partialEffects_", ustockcode.j, ".png"))
+    figLegend <- paste0("**Figure S", iFig, ".** ",
+      "Partial effects in the best method (", methodStr.j, ") for ", ustockcode.j, ".")
+    if(file.exists(fname)){
+      cat("  \n")
+      cat(paste0("![](", fname, ")", "{width=6in}"), "  \n")
+      cat(figLegend, "  \n")
+      cat("  \n")
+    }
+    cat("  \n")
+    
+    # Marginal effects plot
+    iFig=iFig+1
+    fname <- file.path("output/figures/marginalEffects2/", 
+      paste0("marginalEffects_", ustockcode.j, ".png"))
+    figLegend <- paste0("**Figure S", iFig, ".** ",
+      "Marginal effects in the best method (", methodStr.j, ") for ", ustockcode.j, ".")
+    if(file.exists(fname)){
+      cat("  \n")
+      cat(paste0("![](", fname, ")", "{width=6in}"), "  \n")
+      cat(figLegend, "  \n")
+      cat("  \n")
+    }else{
+      cat("For this stock, fixed effects did not include SSB, temperature or salinity, 
+        and thus no marginal effect plots were made.", "  \n")
+    }
+    cat("  \n")
+  }
+  
+}
+```
+
+<!-- \pagebreak -->
+
+<!-- # References -->

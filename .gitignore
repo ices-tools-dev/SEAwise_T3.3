@@ -60,6 +60,9 @@ NEA/data/*.Rdata
 NEA/output/figures/
 NEA/model/PDPs_finalModels.Rdata
 NEA/output/pdps.eval_list.Rdata
+NEA/report/*.docx
+NEA/report/*.pdf
+
 
 # subsequent folders are not synced
 

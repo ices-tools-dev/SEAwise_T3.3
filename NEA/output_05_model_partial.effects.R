@@ -202,7 +202,8 @@ walford.plot = function(model.obj,
   covs <- covs[!is.na(covs)]
   covNames <- c("SSB", "Temperature", "Salinity", "SSB")[match(covs, c("ssb.s", "temp.s", "sal.s", "covar1"))]
   
-  if(sum(!is.na(covs))==0) return()
+  fixedCovs <- sum(!is.na(covs))>0
+  if(!fixedCovs) return()
   
   Qs <- c(0.05, 0.95)  
   L <- lapply(as.list(covs), FUN = function(x){unname(c(quantile(xy[,get(x)], probs = Qs)))})
