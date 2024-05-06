@@ -78,7 +78,7 @@ for(area in names(allSTKs)){
   allres <- list()
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res_linT.Rdata"))
+    load(paste0("NEA/model/", stk, "_res_linT.Rdata"))
     res_linT <- transform(res_linT, fitYear = year-fcYear)
     res_linT <- subset(res_linT, fitYear<=2019)
     sums <-  ddply(res_linT, ~ fcClass +mod, summarize,
@@ -126,7 +126,7 @@ for(area in names(allSTKs)){
   ## summarize by method only -------------
   
   for(stk in STKs){
-    load(paste0("model/", stk, "_res_linT.Rdata"))
+    load(paste0("NEA/model/", stk, "_res_linT.Rdata"))
     res_linT <- ddply(res_linT, ~mod+fcYear, mutate,
                  nfc = length(err)) #number of forecast horizons of that length
     
