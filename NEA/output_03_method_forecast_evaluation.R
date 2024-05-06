@@ -9,7 +9,7 @@ library(ggplot2)
 allSTKs <- list(
   "NS" = c("cod.27.47d20","ple.27.420", "had.27.46a20", "whg.27.47d","pok.27.3a46","sol.27.4", "her.27.3a47d"),
   "IS" = c("cod.27.7a", "had.27.7a", "ple.27.7a", "sol.27.7a", "whg.27.7a"),
-  "CS" = c("ank.27.78abd", "cod.27.7e-k", "had.27.7b-k", "hke.27.3a46-8abd", "meg.27.7b-k8abd", "mon.27.78abd","sol.27.7fg","sol.27.7a", "whg.27.7b-ce-k"),
+  "CS" = c("ank.27.78abd", "cod.27.7e-k", "had.27.7b-k", "hke.27.3a46-8abd", "meg.27.7b-k8abd", "mon.27.78abd","sol.27.7fg","sol.27.7e", "whg.27.7b-ce-k"),
   "Baltic"= c("cod.27.24-32", "her.27.28", "sol.27.20-24", "cod.27.22-24", "her.27.25-2932", "spr.27.22-32", "ple.27.21-23"),
   "Biscay"= c("ane.27.8", "hke.27.3a46-8abd", "hke.27.8c9a", "mon.27.78abd","bss.27.8ab", "pil.27.8abd","pil.27.8c9a", "sol.27.8ab")
 )
