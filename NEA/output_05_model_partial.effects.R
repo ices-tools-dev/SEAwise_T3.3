@@ -594,12 +594,13 @@ for(k in 1:length(model.list)){
     x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",T,F),
     predict.func = predict.func.marg)
   if(!is.null(res)){
+    # res$p <- res$p & theme(
+    #   axis.title.x = element_text(size = 7), 
+    #   axis.title.y = element_text(size = 7),
+    #   axis.text.x = element_text(size = 7), 
+    #   axis.text.y = element_text(size = 7))
+    
     walford.plot.list[[k]] <- res
-    p <- p & theme(
-      axis.title.x = element_text(size = 7), 
-      axis.title.y = element_text(size = 7),
-      axis.text.x = element_text(size = 7), 
-      axis.text.y = element_text(size = 7))
     
     png(fname, width = 15/3*res$n, height = 15/3, units = "in", res = 600)
       print(res$p)
