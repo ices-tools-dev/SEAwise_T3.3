@@ -6,7 +6,7 @@ rm(list = ls())
 # load packages
 library(pdp)
 library(reshape2)
-library(ggplot2)
+library(ggplot2); theme_set(theme_bw())
 library(patchwork)
 library(terra)
 library(data.table)
@@ -19,9 +19,9 @@ library(glmmTMB)
 
 
 # create output folder -----------------------------------------------------
-dir.create("NEA/output/figures/marginalEffects", showWarnings = F)
-dir.create("NEA/output/figures/marginalEffects2", showWarnings = F)
-dir.create("NEA/output/figures/partialEffects", showWarnings = F)
+dir.create("NEA/output/figures/marginalEffects", showWarnings = FALSE)
+dir.create("NEA/output/figures/marginalEffects2", showWarnings = FALSE)
+dir.create("NEA/output/figures/partialEffects", showWarnings = FALSE)
 
 
 # 1. load data objects -------------------------------------------------------
@@ -29,7 +29,7 @@ load("NEA/data/lutLWcoefs.Rdata")
 
 # load final model table directly (as this is updated on github)
 load("NEA/output/stocks and methods with forecasting potential.Rdata")
-model.lut = potential
+model.lut = potential[,c("stk","method")]#potential.broad[,c("stk","mod")]
 names(model.lut) = c("stock","model")
 
 
@@ -72,13 +72,13 @@ calc.marginal.effects = function(model.obj,
   # minL <- mean(datsub$l, na.rm = TRUE)
   minA <- min(datsub$age)
   maxA <- max(datsub$age)+1
-  #minW <- mean(subset(datsub, age == minA)$logw, na.rm = T)
+  #minW <- mean(subset(datsub, age == minA)$logw, na.rm = TRUE)
   minW <- quantile(subset(datsub, age == minA)$logw,
-                   probs = c(0.05, 0.25, 0.5, 0.75, 0.95), na.rm = T)
+                   probs = c(0.05, 0.25, 0.5, 0.75, 0.95), na.rm = TRUE)
   if(any(names(xy) %in% "l")){
-    #minl <- mean(subset(datsub,age == minA)$l,na.rm = T)
+    #minl <- mean(subset(datsub,age == minA)$l,na.rm = TRUE)
     minl <- quantile(subset(datsub,age == minA)$l,
-                     probs = c(0.05, 0.25, 0.5, 0.75, 0.95),na.rm = T)
+                     probs = c(0.05, 0.25, 0.5, 0.75, 0.95),na.rm = TRUE)
     minA.w = data.frame(minW = minW,minl = minl)
   } else{
     minA.w = data.frame(minW = minW)
@@ -109,10 +109,10 @@ calc.marginal.effects = function(model.obj,
     
   RES <- vector("list", nrow(covLevs))
   for(i in seq(RES)){
-    df <- unique(xy[,unique(c("age",ageTerms)), drop = F])
-    df <- df[order(df$age),,drop = F]
+    df <- unique(xy[,unique(c("age",ageTerms)), drop = FALSE])
+    df <- df[order(df$age),,drop = FALSE]
     
-    df <- merge(df, covLevs[i,, drop = F], all.x = T)
+    df <- merge(df, covLevs[i,, drop = FALSE], all.x = TRUE)
     df$logw <- NA
     df$logw[1] <- minW
     df$l <- NA
@@ -130,7 +130,7 @@ calc.marginal.effects = function(model.obj,
       } else{
       # predict log-weights first and convert those to weights...
       prediction <- predict.func(model.obj,
-        newdata = df[j-1,, drop = F])
+        newdata = df[j-1,, drop = FALSE])
       if(any(grepl("logw",names(prediction)))){
         df$logw[j] <- prediction$logw
       } else {
@@ -149,7 +149,7 @@ calc.marginal.effects = function(model.obj,
     RES[[ii]] = do.call(rbind,lapply(RES.all,function(x) x[[ii]]))
   }
   
-  ylim <- range(c(unlist(lapply(RES, FUN = function(x){range(x$w,na.rm = T)}))))
+  ylim <- range(c(unlist(lapply(RES, FUN = function(x){range(x$w,na.rm = TRUE)}))))
   ylim
   zlims <- apply(covLevs, 2, range)
   
@@ -157,7 +157,7 @@ calc.marginal.effects = function(model.obj,
   par(mfcol = c(1, ncol(covLevs)), oma = c(1.5,1.5,2,0), mar = c(3,3,2,1))
 
   for(j in seq(ncol(covLevs))){
-    covOth <- covLevs[,seq(ncol(covLevs))[-j], drop = F]
+    covOth <- covLevs[,seq(ncol(covLevs))[-j], drop = FALSE]
     incl <- which(apply(covOth, 1, FUN = function(x){all(x == covLevsQs["50%",-j])}))
     PAL <- function(x) colorspace::sequential_hcl(n = x,palette = "Sunset_Dark") #colorRamps::blue2green# 
     VALS <- covLevsQs[,j]
@@ -173,9 +173,9 @@ calc.marginal.effects = function(model.obj,
            col = rev(COLS), lty = 1, lwd = 1, bty = "n",
            cex = 1, seg.len = 0.5)
     mtext(names(covLevs)[j], side = 3, line = 0.25, font = 2, adj = 0)
-    mtext(model.obj$stk.name, side = 3, line = 0, outer = T, adj = 0.5, font = 2, cex = 1.5)
-    mtext("weight", side = 2, line = 0, outer = T, adj = 0.5, font = 1, cex = 1)
-    mtext("age", side = 1, line = 0, outer = T, adj = 0.5, font = 1, cex = 1)
+    mtext(model.obj$stk.name, side = 3, line = 0, outer = TRUE, adj = 0.5, font = 2, cex = 1.5)
+    mtext("weight", side = 2, line = 0, outer = TRUE, adj = 0.5, font = 1, cex = 1)
+    mtext("age", side = 1, line = 0, outer = TRUE, adj = 0.5, font = 1, cex = 1)
   }
   
 }
@@ -241,7 +241,7 @@ walford.plot = function(model.obj,
     }
     
     # if(length(grep(pattern = "lasso", meth)) > 0){
-    #   df$logw[j] <- predict(gFit, newdata = df[j-1,, drop = F])
+    #   df$logw[j] <- predict(gFit, newdata = df[j-1,, drop = FALSE])
     # }
     
     prediction <- predict.func(model.obj, newdata = newdata)
@@ -264,7 +264,7 @@ walford.plot = function(model.obj,
     agelabs
     
     theme_set(theme_bw())
-    axisLims <- exp(range(c(d$logw, d$logw2, newdata[real=="realistic"]$pred), na.rm = T))*c(1, 1.15)
+    axisLims <- exp(range(c(d$logw, d$logw2, newdata[real=="realistic"]$pred), na.rm = TRUE))*c(1, 1.15)
     p <- ggplot(data = d) + aes(x = exp(logw), y = exp(logw2)) +
       geom_point(color = "grey80") + 
       geom_abline(lty = 2, color = "grey50") +
@@ -345,8 +345,8 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
       
       
       pdp_out = partial(object = model.obj,pred.var = v.split,train = xy,pred.grid = pred.grid,
-                        pred.fun = function(object,newdata) predict.func(object,newdata),plot = F)
-      pdp_melt = as.data.frame(terra::rast(as.data.frame(pdp_out)),xy = T)
+                        pred.fun = function(object,newdata) predict.func(object,newdata),plot = FALSE)
+      pdp_melt = as.data.frame(terra::rast(as.data.frame(pdp_out)),xy = TRUE)
       pal = colorspace::sequential_hcl(n = 1000,palette = "Sunset_dark")
       interaction_plot[[ii]] = ggplot(pdp_melt,aes(x = x, y = y)) +
         geom_tile(aes(fill = yhat)) +
@@ -376,7 +376,7 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
       }
       names(pred.grid) = v
       pdp_out = partial(object = model.obj,pred.var = v,train = xy,pred.grid = pred.grid,
-                        pred.fun = function(object,newdata) predict.func(object,newdata),plot = F)
+                        pred.fun = function(object,newdata) predict.func(object,newdata),plot = FALSE)
     }
     if(!any(v %in% interactions)){
       by.id = pdp_out[,v]
@@ -392,11 +392,11 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
   pdp_out = do.call(rbind,pdp_out.all)
   median_pdp = do.call(rbind,median_pdp.all)
   vars = vars[!grepl("I\\(",vars)]
-  vars_pdp = melt(xy[,c("y","age",vars[!grepl(":",vars)]),drop = F],id.vars = c("y","age"))
+  vars_pdp = melt(xy[,c("y","age",vars[!grepl(":",vars)]),drop = FALSE],id.vars = c("y","age"))
   #vars_pdp = melt(xy,id.vars = c("y","age"))
   if("age" %in% vars){
     # add age as variable
-    vars_age = melt(xy[,c("y","age"),drop = F],id.vars = c("y"))
+    vars_age = melt(xy[,c("y","age"),drop = FALSE],id.vars = c("y"))
     vars_age$age = vars_age$value
     vars_age = vars_age[,colnames(vars_pdp)]
     vars_pdp = rbind(vars_age,vars_pdp)
@@ -405,7 +405,7 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
     vars_pdp$y = exp(vars_pdp$y)
   }
   
-  col_age = colorspace::sequential_hcl(n = length(unique(vars_pdp$age)),palette = "Purple-Yellow",rev = T)
+  col_age = colorspace::sequential_hcl(n = length(unique(vars_pdp$age)),palette = "Purple-Yellow",rev = TRUE)
   
   single.effects = vars[!grepl(":",vars)]
   pdp.plot = list()
@@ -456,9 +456,9 @@ calc.partial.effects2 = function(model.obj,y,x,predict.func,log.space = FALSE) {
 # evaluate effects -----------------------------------------------
 
 pdps.eval_list = list()
-plot.marginal <- F
-plot.marginal2 <- T
-plot.partial <- T
+plot.marginal <- FALSE
+plot.marginal2 <- TRUE
+plot.partial <- TRUE
 
 walford.plot.list <- list()
 
@@ -578,10 +578,10 @@ for(k in 1:length(model.list)){
   if(plot.marginal){
   fname <- file.path("NEA/output/figures/marginalEffects", paste0("marginalEffects_", name_stk, ".png"))
   png(fname, width = 7, height = 4, units = "in", res = 600)
-  op <- par(no.readonly = T)
+  op <- par(no.readonly = TRUE)
   par(cex = 1, ps = 9)
   marginalEffects.eval = calc.marginal.effects(model.obj = mod, y = fitted.data[,y.var],
-    x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",T,F),
+    x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",TRUE,FALSE),
     predict.func = predict.func.marg)
   par(op)
   dev.off()
@@ -591,7 +591,7 @@ for(k in 1:length(model.list)){
   if(plot.marginal2){
   fname <- file.path("NEA/output/figures/marginalEffects2", paste0("marginalEffects_", name_stk, ".png"))
   res <- walford.plot(model.obj = mod, y = as.data.frame(fitted.data)[,y.var],
-    x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",T,F),
+    x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",TRUE,FALSE),
     predict.func = predict.func.marg)
   if(!is.null(res)){
     # res$p <- res$p & theme(
@@ -612,7 +612,7 @@ for(k in 1:length(model.list)){
   # 3. produce partial effects plots -----------------
   if(plot.partial){
   pdps.eval = calc.partial.effects2(model.obj = mod, y = fitted.data[,y.var],
-    x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",T,F),
+    x = fitted.data, log.space = ifelse(name_mod == "laaGrowth",TRUE,FALSE),
     predict.func = predict.func.part)#stats::predict)
   pdps.eval$plot <- pdps.eval$plot + plot_annotation(title = name_stk,subtitle = name_mod)
   # store in list
