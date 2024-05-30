@@ -1,7 +1,7 @@
 ## ----setup, echo=FALSE---------------------------------------------------------------------------
 library(knitr)
 library(plyr)
-library(ggplot2)
+library(ggplot2); theme_set(theme_bw())
 
 
 ## organize stock by area -----------
@@ -29,9 +29,9 @@ for(area in names(allSTKs)){
   mods2 <- ldply(.data =RES2, .fun= function(x){
     if(x$scen != "glmmTMB_GAMM_AICc"){
     tmp <- x$mod[keep]
-    names(tmp) <- c("(Intercept)", "logw", "age", "age^2", "age^3", 
+    names(tmp) <- c("(Intercept)", "logw", "age", "age^2", 
                  "sal",
-                 "SSB", "temp", "temp^2",
+                 "SSB", "temp", "temp^2", "age^2:logw",
                  "age:logw",  
                  "sal:logw", "SSB:logw", "temp:logw" )
     round(tmp, 2)}

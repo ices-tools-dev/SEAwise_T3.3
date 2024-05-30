@@ -18,7 +18,7 @@ library(lmmlasso)
 library(lmmen) 
 library(cv.glmmLasso)
 library(glmmTMB)
-source("R/laaGrowth.R") # function to fit length increment growth models
+source("NEA/R/laaGrowth.R") # function to fit length increment growth models
 
 # 3. set-up ------------------------------------------------------------------
 
@@ -33,11 +33,11 @@ scen <- data.frame(name = c("naive", "laaGrowth", "lasso_BIC",
 
 # LMM inputs
 #global model of weight-at-age without random effects
-fullform <- logw2~logw + age+I(age^2)+I(age^3) + sal.s + ssb.s + temp.s +I(temp.s^2) + 
+fullform <- logw2~logw + age+I(age^2)+logw:I(age^2) + sal.s + ssb.s + temp.s +I(temp.s^2) + 
   logw:age +  logw:sal.s + logw:ssb.s + logw:temp.s
 
 #global model of weight-at-age with random effects
-fullformRE <- logw2~logw + age+I(age^2)+I(age^3) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
+fullformRE <- logw2~logw + age+I(age^2)+logw:I(age^2) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
   logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
 
 #global model of weight-at-age GAMM
@@ -49,7 +49,7 @@ fullform.rec <- logw ~ sal.s + ssb.s + temp.s + I(temp.s^2)
 fullformGAM.rec <- logw ~ sal.s + ssb.s + s(temp.s, k=3) 
 
 #range of penalty terms to try in LASSO methods
-lambdas <-  seq(10, 0, by = -0.5)
+lambdas <-  seq(50, 0, by = -0.5)
 
 # stk - stock loop START --------------------------------------------------------
 
@@ -105,14 +105,14 @@ for(stk in STKs[1:length(STKs)]){
 
       # laaGrowth -----
       if(scen$name[s] == "laaGrowth"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata")) # gFit
+        load(paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata")) # gFit
         gFit <- update(gFit, data = dat.train, weights = dat.train$n, control = list(warnOnly = TRUE))
         # coefficients(gFit)
       }
       
       # lasso_BIC -----
       if(scen$name[s] == "lasso_BIC"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
+        load(paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
         
         gFit <- try(lmmen::cv.glmmLasso(form.fixed=gFit$fix, 
                                     form.rnd = list(yearf=~1, cohortf=~1), 
@@ -123,13 +123,13 @@ for(stk in STKs[1:length(STKs)]){
         }
           
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
+        load(paste0("NEA/model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
         minage.i <- try(update(minage.i, data=tmp))
       }
       
       # lasso_CV10perc -----
       if(scen$name[s] == "lasso_CV10perc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
+        load(paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
         
         gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=gFit$fix, 
                                            rnd = list(yearf=~1, cohortf=~1), 
@@ -142,13 +142,13 @@ for(stk in STKs[1:length(STKs)]){
         }
           
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
+        load(paste0("NEA/model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
         minage.i <- try(update(minage.i, data=tmp))
       }
       
       # lasso_CV20perc -----
       if(scen$name[s] == "lasso_CV20perc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
+        load(paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
         
         gFit <- try(cv.glmmLasso::cv.glmmLasso(fix=gFit$fix, 
                                            rnd = list(yearf=~1, cohortf=~1), 
@@ -161,12 +161,12 @@ for(stk in STKs[1:length(STKs)]){
         }
           
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
+        load(paste0("NEA/model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
         minage.i <- try(update(minage.i, data=tmp))
       }
       # glmmTMB_AICc -----
       if(scen$name[s] == "glmmTMB_AICc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
+        load(paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
         
         gFit <- try(update(gFit, data=dat.train))
 
@@ -175,12 +175,12 @@ for(stk in STKs[1:length(STKs)]){
         }
         
         tmp <- subset(dat.train, age==minage)
-        load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
+        load(paste0("NEA/model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
         minage.i <- try(update(minage.i, data=tmp))
       }      
       # glmmTMB_GAMM_AICc -----
       if(scen$name[s] == "glmmTMB_GAMM_AICc"){ 
-        load(paste0("model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
+        load(paste0("NEA/model/fit_by_stk_n_method/", stk, "_", scen$name[s],".Rdata"))#gFit
         
         gFit <- try(update(gFit, data=dat.train))
         
@@ -189,7 +189,7 @@ for(stk in STKs[1:length(STKs)]){
       	}
       	
       	tmp <- subset(dat.train, age==minage)
-      	load(paste0("model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
+      	load(paste0("NEA/model/fit_by_stk_n_method/recruits_", stk, "_", scen$name[s],".Rdata"))#minage.i
       	minage.i <- try(update(minage.i, data=tmp))
       }      
       

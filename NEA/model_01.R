@@ -25,11 +25,11 @@ scen <- data.frame(name = c("naive", "laaGrowth", "lasso_BIC",
 
 # LMM inputs
 #global model of weight-at-age without random effects
-fullform <- logw2~logw + age+I(age^2)+I(age^3) + sal.s + ssb.s + temp.s +I(temp.s^2) + 
+fullform <- logw2~logw + age+I(age^2)+logw:I(age^2) + sal.s + ssb.s + temp.s +I(temp.s^2) + 
   logw:age +  logw:sal.s + logw:ssb.s + logw:temp.s
 
 #global model of weight-at-age with random effects
-fullformRE <- logw2~logw + age+I(age^2)+I(age^3) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
+fullformRE <- logw2~logw + age+I(age^2)+logw:I(age^2) + sal.s  + ssb.s + temp.s +I(temp.s^2)  + 
   logw:age + logw:sal.s + logw:ssb.s + logw:temp.s +(1|cohortf) + (1|yearf)
 
 #global model of weight-at-age GAMM
@@ -41,7 +41,7 @@ fullform.rec <- logw ~ sal.s + ssb.s + temp.s + I(temp.s^2)
 fullformGAM.rec <- logw ~ sal.s + ssb.s + s(temp.s, k=3) 
 
 #range of penalty terms to try in LASSO methods
-lambdas <-  seq(10, 0, by = -0.5)
+lambdas <-  seq(50, 0, by = -0.5)
 
 #set up cluster 
 ncores <- detectCores() # max available cores
