@@ -1,7 +1,7 @@
 ## ----setup, echo=FALSE---------------------------------------------------------------------------
 library(knitr)
 library(plyr)
-library(ggplot2)
+library(ggplot2); theme_set(theme_bw())
 
 
 ## organize stock by area -----------
@@ -28,18 +28,22 @@ for(area in names(allSTKs)){
   
   for(stk in STKs){
     load(paste0("NEA/model/", stk, "_res.Rdata"))
-    res <- transform(res, fitYear = year-fcYear)
-    sums <-  ddply(res, ~ fitYear +mod, summarize, 
+    res <- transform(res, 
+                     fitYear = year-fcYear,
+                     fcClass = cut(fcYear, breaks = c(0,3,4,10, Inf), 
+                                   labels = c("short (1-3)", "medium (4)", "long (5-10)", "vlong (11-15)"))
+    )
+    sums <-  ddply(res, ~ fcYear +mod, summarize, 
                    mse = mean((w2.orig-w2)^2), 
                    msre = mean(((w2.orig-w2)/w2.orig)^2),
                    rmse = mean((w2.orig-w2)^2)^.5,
                    mae = mean(abs(w2.orig-w2)),
                    stk=stk
     )
-    sums <- ddply(sums, ~ fitYear, mutate, 
+    sums <- ddply(sums, ~ fcYear, mutate, 
                   rel_rmse=rmse/subset(rmse, mod=="naive"),
                   rel_mae=mae/subset(mae, mod=="naive"))
-
+    
     allstks[[stk]] <- sums
   }
   predw1lm <- do.call(rbind, allstks)
@@ -48,39 +52,45 @@ for(area in names(allSTKs)){
   
   
   both_by_year <- predw1lm #rbind(simplew1, predw1lm)
-  both_by_year <- subset(both_by_year, fitYear<=2019)
-
+  #both_by_year <- subset(both_by_year, fitYear<=2019)
+  
   ## plot by year -----
   
-  ggplot(subset(both_by_year, mod !="naive"), aes(fitYear, rel_mae))+
+  ggplot(subset(both_by_year, mod !="naive"),
+         aes(fcYear, rel_mae))+
     geom_line(aes(colour=mod))+
     #  geom_line(aes(colour=mod, lty=w1type))+
     ylab(expression(MAE[modeled]/MAE[naive]))+
     geom_hline(yintercept = 1)+
     #  guides(lty=guide_legend(title="recruit \nweights"))+
     facet_grid(stk~., scale="free")+
-    xlab("Forecast Origin")
-  ggsave(paste0("NEA/output/figures/method_evaluation/method_mean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
+    xlab("Forecast Horizon")
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_rel_mean_abs_err by Horizon", area, ".png"), height=6.5, width=5)
   
   
-  ggplot(subset(both_by_year, mod !="naive"), aes(fitYear, rel_rmse))+
+  ggplot(subset(both_by_year, mod !="naive"), 
+         aes(fcYear, rel_rmse))+
     geom_line(aes(colour=mod))+
     #  geom_line(aes(colour=mod, lty=w1type))+
     ylab(expression(RMSE[modeled]/RMSE[naive]))+
     geom_hline(yintercept = 1)+
     #  guides(lty=guide_legend(title="recruit \nweights"))+
     facet_grid(stk~., scale="free")+
-    xlab("Forecast Origin")
-  ggsave(paste0("NEA/output/figures/method_evaluation/method_rtmean_sq_rerr by fitYear", area, ".png"), height=6.5, width=5)
+    xlab("Forecast Horizon")
+  ggsave(paste0("NEA/output/figures/method_evaluation/method_rtmean_sq_rerr by Horizon", area, ".png"), height=6.5, width=5)
   
   ## summarize by fcClass -----
-
+  
   allres <- list()
   
   for(stk in STKs){
     load(paste0("NEA/model/", stk, "_res.Rdata"))
-    res <- transform(res, fitYear = year-fcYear)
-    res <- subset(res, fitYear<=2019)
+    res <- transform(res, 
+                     fitYear = year-fcYear,
+                     fcClass = cut(fcYear, breaks = c(0,3,4,10, Inf), 
+                                   labels = c("short (1-3)", "medium (4)", "long (5-10)", "vlong (11-15)"))
+    )
+    #res <- subset(res, fitYear<=2019)
     sums <-  ddply(res, ~ fcClass +mod, summarize,
                    mse = mean((w2.orig-w2)^2),
                    msre = mean(((w2.orig-w2)/w2.orig)^2),
@@ -101,7 +111,12 @@ for(area in names(allSTKs)){
   both_by_fcClass <- predw1lm #rbind(simplew1, predw1lm)
   
   ## plot by fcClass -----
-  levels(both_by_fcClass$fcClass) <- c("short horizon \n (1-3 yrs)", "medium horizon \n(4-6 yrs)", "long horizon \n (7-15 yrs)" )
+  
+  both_by_fcClass <- subset(both_by_fcClass, 
+                            fcClass %in% c("short (1-3)","long (5-10)"))
+  both_by_fcClass$fcClass <- droplevels(both_by_fcClass$fcClass)
+  
+  levels(both_by_fcClass$fcClass) <- c("short horizon \n (1-3 yrs)", "long horizon \n (5-10 yrs)" )
   ggplot(subset(both_by_fcClass, mod !="naive"), aes(mod, rel_rmse))+
     facet_grid(stk~fcClass, scale="free")+
     geom_point()+xlab(NULL)+
@@ -166,7 +181,7 @@ for(area in names(allSTKs)){
 ## summarize by method only -------------
 allstks <- list()
 
- for(stk in completedSTKs){
+for(stk in completedSTKs){
   load(paste0("NEA/model/", stk, "_res.Rdata"))
   res <- ddply(res, ~mod+fcYear, mutate,
                nfc = length(err)) #number of forecast horizons of that length
@@ -189,12 +204,12 @@ predw1lm <- do.call(rbind, allstks)
 tmp <- reshape::melt(predw1lm[,c("mod" , "stk", "rel_mae")],
                      id.vars = c("mod", "stk"))
 
-potential.braod <- subset(tmp, value<1, drop = TRUE)
+potential.broad <- subset(tmp, value<1, drop = TRUE)
 
 (potential <- ddply(potential.braod, ~stk, summarize, 
-                   method = mod[which.min(value)]))
+                    method = mod[which.min(value)]))
 
-save(potential, potential.braod, file="NEA/output/stocks and methods with forecasting potential.Rdata")
+save(potential, potential.broad, file="NEA/output/stocks and methods with forecasting potential.Rdata")
 
 ggplot(potential.braod, aes(mod, value))+   
   xlab(NULL)+
@@ -203,8 +218,16 @@ ggplot(potential.braod, aes(mod, value))+
   geom_hline(yintercept = 1)+
   facet_wrap(~stk, scale="free")+
   geom_point()
-  
+
 ggsave("NEA/output/figures/stocks and methods with forecasting potential.png", height=10, width=7)
+ggplot(potential.braod, aes(mod, value))+   
+  xlab(NULL)+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  ylab(expression(MAE[modeled]/MAE[naive]))+
+  geom_hline(yintercept = 1)+
+  facet_wrap(~stk, scale="free", nrow=4, ncol=5)+
+  geom_point()
+ggsave("NEA/output/figures/stocks and methods with forecasting potential wide.png", height=10, width=10)
 #   
 # load("model/allGAMMs.Rdata", verbose = TRUE)
 # names(RES) = unlist(lapply(strsplit(names(RES), split = "_"), function(x){x[1]}))
