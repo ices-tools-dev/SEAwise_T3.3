@@ -206,12 +206,12 @@ tmp <- reshape::melt(predw1lm[,c("mod" , "stk", "rel_mae")],
 
 potential.broad <- subset(tmp, value<1, drop = TRUE)
 
-(potential <- ddply(potential.braod, ~stk, summarize, 
+(potential <- ddply(potential.broad, ~stk, summarize, 
                     method = mod[which.min(value)]))
 
 save(potential, potential.broad, file="NEA/output/stocks and methods with forecasting potential.Rdata")
 
-ggplot(potential.braod, aes(mod, value))+   
+ggplot(potential.broad, aes(mod, value))+   
   xlab(NULL)+
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
   ylab(expression(MAE[modeled]/MAE[naive]))+
@@ -220,7 +220,7 @@ ggplot(potential.braod, aes(mod, value))+
   geom_point()
 
 ggsave("NEA/output/figures/stocks and methods with forecasting potential.png", height=10, width=7)
-ggplot(potential.braod, aes(mod, value))+   
+ggplot(potential.broad, aes(mod, value))+   
   xlab(NULL)+
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
   ylab(expression(MAE[modeled]/MAE[naive]))+
