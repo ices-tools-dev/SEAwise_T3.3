@@ -10,6 +10,16 @@ load("NEA/data/lutLWcoefs.Rdata")
 
 # 2. required functions ---------------------------------------------------
 
+library(emulator)
+library(miscTools)
+library(penalized)
+library(quadprog)
+library(lmmlasso)
+library(lmmen) 
+library(cv.glmmLasso)
+library(doParallel)
+library(glmmTMB)
+library(MuMIn)
 source("NEA/R/laaGrowth.R") # function to fit length increment growth models
 
 # 3. set-up ------------------------------------------------------------------
@@ -20,7 +30,7 @@ nTry <- 20 # for use in laaGrowth models
 nYearsNaive <- 3 # number of data years to use for naive model fitting
       
 # scenarios / models
-scen <- data.frame(name = c("naive", "laaGrowth", "lasso_BIC", 
+scen <- data.frame(name = c("naive", "laaGrowth", #"lasso_BIC", 
   "lasso_CV10perc",  "lasso_CV20perc", "glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
 
 # LMM inputs

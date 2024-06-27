@@ -21,8 +21,9 @@ source("NEA/R/laaGrowth.R") # function to fit length increment growth models
 
 # scenarios / models
 scen <- data.frame(name = #c("laaGrowth","glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
-                  c("laaGrowth", "lasso_BIC", "lasso_CV10perc", 
-                            "lasso_CV20perc", "glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
+#                  c("laaGrowth", "lasso_BIC", "lasso_CV10perc", 
+                    c("laaGrowth",  "lasso_CV10perc", 
+                      "lasso_CV20perc", "glmmTMB_AICc", "glmmTMB_GAMM_AICc"))
 
 nTry <- 20 # for use in laaGrowth models
 
