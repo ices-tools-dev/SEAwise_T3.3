@@ -1,0 +1,707 @@
+---
+  title:  "Transfer growth models for anchovy in Biscay from WP3 to WP6 in SEAwise"
+  author: "L. Ibaibarriaga"
+  date:   "`r format(Sys.time(), '%d %B, %Y')`" 
+  output:
+    html_document:
+    toc: true
+    toc_depth: 2
+  fig_caption: true
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=F, message=F, fig.width = 12)
+```
+
+In this document we refit the models from [Taboada et al (2023)](https://doi.org/10.1111/gcb.17047) so that they can be transferred from WP3 to WP6 in SEAwise. All the data and code of the paper are available [here](https://zenodo.org/records/10090204). For updates see also the following gitlab repository: [sizanc](https://gitlab.com/fgtaboada/sizanc).
+
+```{r, echo=F}
+library(FLCore)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(GGally)
+library(ggcorrplot)
+library(gridExtra)
+
+theme_set(theme_bw(base_size=16))
+```
+
+# Load data
+
+```{r}
+# load FLStock object
+
+load("C:/Use/GitHub/ices-tools-dev/SEAwise/SEAwise_T3.3/NEA/data/FLStocks_in/bob/wghansa2022_aneq.stk.RData")
+aneq.stk <- window(aneq.stk, end=2022) # remove 2023 (incomplete)
+
+# load mean weight-at-age from JUVENA
+
+dat <- read.csv(file="C:/Use/proyectos/IM-23-SIZANE/analisis/data/juvena/Bio_Juv_ANE-2003_2022.csv", header=T)
+
+dat.haul <- dat %>% 
+  group_by(y, sample, age) %>% 
+  summarise(l=mean(lmm, na.rm=T),
+            w=mean(w, na.rm=T)) %>% 
+  filter(!is.na(age))
+
+dat.haul <- pivot_wider(dat.haul, names_from=age, values_from=c(l, w),  names_sep = "")
+dat.haul <- right_join(select(dat, c(lon:individual, fpw0p)), dat.haul, multiple="first") 
+dat.haul$year <- dat.haul$y
+
+dat.ts <- dat.haul %>% 
+  group_by(year) %>% 
+  summarise(w0=weighted.mean(w0, w=fpw0p, na.rm=T), 
+            l0=weighted.mean(l0, w=fpw0p, na.rm=T))
+
+# create new FLStock object with weight-at-age 0 from JUVENA
+
+aneq.stk2 <- aneq.stk 
+stock.wt(aneq.stk2["0",]) <- 0
+stock.wt(aneq.stk2["0", as.character(dat.ts$year)]) <- dat.ts$w0
+
+# ssb (from FLBiols because it is the same as used in FLBEIA)
+
+ssb(aneq.stk2) # check because these are different from official SSB estimates
+
+aneq.biol <- as(aneq.stk2, "FLBiol")
+ssb(aneq.biol)
+# equivalently, (i.e. without fishing mortality)
+# quantSums(stock.n(aneq.stk)*exp(-m(aneq.stk)*m.spwn(aneq.stk))*stock.wt(aneq.stk)*mat(aneq.stk))
+
+# environmental data from ORAS5
+
+oras <- readRDS("C:/Use/GitHub/ices-tools-dev/SEAwise/SEAwise_T3.3/NEA/data/env/ORAS5_AnnualTEMPByDemPelStock2.RDS")
+oras <- subset(oras, select=c("year", "ane.27.8"))
+names(oras) <- c("year","oras5")
+
+# environmental data from Fernando
+
+doisst <- readRDS(file.path("env_data_fernando","doisst.rds"))
+doisst$tosa = with( doisst, ( tosWinter + tosSpring + tosSummer + tosAutumn ) / 4.0 )
+doisst = doisst[ c( 'y', 'tosa' ) ]
+names(doisst) <- c("year","oisst")
+  
+# compare temperatures
+
+temp.dat <- merge(doisst, oras, by="year")
+temp.datl <- pivot_longer(temp.dat, cols=c("oras5","oisst"), names_to="source")
+
+ggplot(temp.datl, aes(year, value, col=source, group=source))+
+  geom_point()+
+  geom_line()+
+  ylab("Temperature (ºC)")+
+  xlab("")
+
+ggplot(temp.dat, aes(oisst, oras5))+
+  geom_point()+
+  geom_line()+
+  geom_abline(intercept=0, slope=1)+
+  ylab("")+
+  xlab("")+
+  xlim(c(14, 16.5))+
+  ylim(c(14, 16.5))
+
+# prepare final data set
+
+df <- as.data.frame(stock.wt(aneq.stk2))
+df <- subset(df, select=c("age","year","data"))
+df <- pivot_wider(df, values_from = "data", names_from="age", names_prefix="w")
+
+df <- left_join(df, temp.dat)
+df <- left_join(df, as.data.frame(ssb(aneq.biol)))
+df <- df %>% 
+  rename(ssb=data) %>% 
+  mutate(w0=ifelse(w0==0, NA, w0/1000)) %>% 
+  select(-c("age","unit","season","area","iter"))
+
+df <- df %>% 
+  mutate(logw0=log(w0),
+         logw1=log(w1),
+         logw2=log(w2),
+         logw3=log(w3),
+         logssb=log(ssb))
+
+# use only data until 2021 (no env data for 2022 and same year range as in Fernando's analysis)
+df <- filter(df, year<2022)
+  
+# quick exploratory checks on data
+
+ggpairs(df)
+
+mat <- cor(df[, -1], use="complete.obs") 
+p.mat <- cor_pmat(df[, -1])
+ggcorrplot(mat, type = "lower", lab=T, p.mat = p.mat)
+```
+
+# Model for weight-at-age 0 
+
+In the paper, the model resulting from the fit to 2003-2021 dataset is given in Figure S7 in the suppl. mat. and Table S3 in the suppl.mat.
+$$ln(w_0)=3.79-0.29*ln(SSB)$$
+
+```{r}
+# Data available for 2003-2022
+
+df0 <- df %>% 
+  select(year, w0, logw0, ssb, logssb) %>%
+  na.omit() 
+
+# weight-at-age 0 (in kg)
+
+m0def <- lm(logw0 ~ logssb, data=df0)
+summary(m0def)
+coef(m0def) 
+# (Intercept)      logssb 
+# -3.5049747  -0.2251235
+
+# note that the model parameters are close to the paper after accounting for the unit transformation (from kg to g)
+# coef(m0)[1] +log(1000) gives 3.40, which is close to the 3.79 from the paper 
+# coef(m0)[2] gives -0.23, which is close to -0.29
+
+par(mfrow=c(2,2))
+plot(m0def)
+
+ggplot(df, aes(logssb, logw0))+
+  geom_point()+
+  expand_limits(y=0)
+
+ggplot(df, aes(logssb, logw0))+
+  geom_point()+
+  expand_limits(y=0)+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+```
+
+# Model for weight-at-age 1, 2 and 3plus 
+
+We select the models including ssb and temp (Table S3 in the suppl.mat.):
+
+$$ln(w_1)=8.59-0.1*ln(SSB)-0.32*Temp$$
+$$ln(w_2)=10.55-0.12*ln(SSB)-0.39*Temp$$
+$$ln(w_3)=11.08-0.08*ln(SSB)-0.45*Temp$$
+## Weight-at-age 1
+
+```{r}
+m1a <- lm(logw1 ~ oisst, data=df)
+summary(m1a)
+par(mfrow=c(2,2))
+plot(m1a)
+
+m1b <- lm(logw1 ~ logssb, data=df)
+summary(m1b)
+par(mfrow=c(2,2))
+plot(m1b)
+
+m1c <- lm(logw1 ~ logssb + oisst, data=df)
+summary(m1c)
+par(mfrow=c(2,2))
+plot(m1c)
+
+ggplot(df, aes(oisst, logw1))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+
+ggplot(df, aes(oras5, logw1))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+
+ggplot(df, aes(logssb, logw1))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+```
+
+## weight-at-age 2
+
+```{r}
+m2a <- lm(logw2 ~ oisst, data=df)
+summary(m2a)
+par(mfrow=c(2,2))
+plot(m2a)
+
+m2b <- lm(logw2 ~ logssb, data=df)
+summary(m2b)
+par(mfrow=c(2,2))
+plot(m2b)
+
+m2c <- lm(logw2 ~ logssb + oisst, data=df)
+summary(m2c)
+par(mfrow=c(2,2))
+plot(m2c)
+
+ggplot(df, aes(oisst, logw2))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+
+ggplot(df, aes(oras5, logw2))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+
+ggplot(df, aes(logssb, logw2))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+```
+
+## weight-at-age3plus
+
+```{r}
+m3a <- lm(logw3 ~ oisst, data=df)
+summary(m3a)
+par(mfrow=c(2,2))
+plot(m3a)
+
+m3b <- lm(logw3 ~ logssb, data=df)
+summary(m3b)
+par(mfrow=c(2,2))
+plot(m3b)
+
+m3c <- lm(logw3 ~ logssb + oisst, data=df) # the coef of temp is the most different one wrt the paper
+summary(m3c)
+par(mfrow=c(2,2))
+plot(m3c)
+
+ggplot(df, aes(oisst, logw3))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+
+ggplot(df, aes(oras5, logw3))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+
+ggplot(df, aes(logssb, logw3))+
+  geom_point()+
+  geom_smooth(method="lm", col=2, fill=2, alpha=0.3)
+```
+
+When we fit all of them together into a single model, the model coefficients are the same. The assumptions related to having a common variance and the significance of the terms may change. 
+
+```{r}
+df2 <- df %>% select(year, oisst, oras5, logw1:logssb)
+df2 <- pivot_longer(df2, cols=starts_with("logw"), names_to="fage",values_to="logw")
+df2 <- df2 %>% 
+  separate(fage, into=c("tt","age"),sep="logw") %>% 
+  select(-tt) %>% 
+  mutate(age=factor(age))
+  
+m <- lm(logw ~ -1 + age + (logssb + oisst):age, data=df2) 
+summary(m)
+```
+# Prediction plots
+
+```{r}
+pred.dat <- expand.grid(oisst=seq(10,22,by=2), ssb=seq(1000, 250000, by=1000))
+pred.dat$logssb <- log(pred.dat$ssb)
+pred.dat$logw0 <- predict(m0def, newdata=pred.dat)
+pred.dat$logw1 <- predict(m1c, newdata=pred.dat)
+pred.dat$logw2 <- predict(m2c, newdata=pred.dat)
+pred.dat$logw3 <- predict(m3c, newdata=pred.dat)
+pred.dat$w0 <- exp(pred.dat$logw0) 
+pred.dat$w1 <- exp(pred.dat$logw1) 
+pred.dat$w2 <- exp(pred.dat$logw2) 
+pred.dat$w3 <- exp(pred.dat$logw3) 
+
+p1 <- ggplot(pred.dat, aes(ssb, w0, group=oisst, col=oisst))+
+  geom_line()+
+  geom_point(data=df, aes(ssb, w0))+
+  expand_limits(y=0)
+p2 <- ggplot(pred.dat, aes(ssb, w1, group=oisst, col=oisst))+
+  geom_line()+
+  geom_point(data=df, aes(ssb, w1))+
+  expand_limits(y=0)
+p3 <- ggplot(pred.dat, aes(ssb, w2, group=oisst, col=oisst))+
+  geom_line()+
+  geom_point(data=df, aes(ssb, w2))+
+  expand_limits(y=0)
+p4 <- ggplot(pred.dat, aes(ssb, w3, group=oisst, col=oisst))+
+  geom_line()+
+  geom_point(data=df, aes(ssb, w3))+
+  expand_limits(y=0)
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
+```
+
+
+# Evaluate the prediction skill 
+
+## For weight-at-age0 
+
+```{r, echo=F}
+m0 <- lm(logw0 ~ logssb, data=df0) # m0def
+summary(m0)
+
+n <- nrow(df0) # number of data points used in the model fit
+
+k <- min(floor(n/2), 15) # number of years to be removed, ensure we have at last half of the data for the model fit
+
+out.pred <- NULL # initialise vector to store results
+
+for (i in 1:k){
+  m <- lm(formula(m0) , data=df0[1:(n-i), ])
+  pred.dat <- expand.grid(ntrain=(n-i), h=1:i)
+  pred.dat$obs <- df0[(n-i+1):n, all.vars(formula(m0))[1], drop=T]
+  pred.dat$fit.mod <- predict(m, newdata=df0[(n-i+1):n, ])
+  pred.dat$fit.naive <- mean(df0[1:(n-i), all.vars(formula(m0))[1], drop=T], na.rm=T) # naive prediction based on overall mean
+  pred.dat$e.mod <- abs(pred.dat$obs-pred.dat$fit.mod)
+  pred.dat$e.naive <- abs(pred.dat$obs-pred.dat$fit.naive)
+  out.pred <- rbind(out.pred, pred.dat)
+}
+
+out.pred <- out.pred %>% 
+  mutate(hclass= cut(h, breaks=c(0, 3, 6, 15)),
+         hterm=cut(h, breaks=c(0, 3, 6, 15), labels=c("short (1-3)", "medium (4-6)","long (7-15)")))
+
+# summarise by ntrain (nb years for training)
+
+res.ntrain <- out.pred %>% 
+  group_by(ntrain) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+
+p <- ggplot(res.ntrain, aes(ntrain, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Nb years training dataset")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# summarise by h (prediction time horizon) 
+
+res.h <- out.pred %>% 
+  group_by(h) %>% 
+  summarise(n=n(), 
+            relmae=mean(abs(e.mod))/mean(abs(e.naive)))
+res.h
+
+print(paste("Simple average of MAE by h", mean(res.h$relmae)))
+print(paste("Weighted average of MAE by h", weighted.mean(res.h$relmae, w=1/res.h$n)))
+
+p <- ggplot(res.h, aes(h, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  geom_hline(yintercept=weighted.mean(res.h$relmae, w=1/res.h$n), col=2, lty=2)+
+  scale_x_continuous(breaks=seq(1, 15))+
+  xlab("Time horizon (years)")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# overall MAE (weighted)
+
+aux <- out.pred %>% 
+  group_by(h) %>% 
+  mutate(n=n()) %>% 
+  ungroup() %>% 
+  summarise(relmae=mean(e.mod) / mean(e.naive),
+            relmae.wt=weighted.mean(e.mod, w=1/n) / weighted.mean(e.naive, w=1/n))
+
+print(paste("Ratio of unweighted MAEs", aux$relmae))
+print(paste("Ratio of weighted MAEs", aux$relmae.wt))
+
+# summarise by hclass or hterm (grouped time horizons: short, medium, long)
+
+res.hterm <- out.pred %>% 
+  group_by(hterm) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+res.hterm
+
+p <- ggplot(res.hterm, aes(hterm, relmae))+
+  geom_bar(stat="identity", fill="grey")+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Time horizon classes")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+```
+
+## For weight-at-age1
+
+```{r, echo=F}
+m0 <- lm(logw1 ~ logssb + oisst, data=df) # m1c
+
+summary(m0)
+
+n <- nrow(df) # number of data points used in the model fit
+
+k <- min(floor(n/2), 15) # number of years to be removed, ensure we have at last half of the data for the model fit
+
+out.pred1 <- NULL # initialise vector to store results
+
+for (i in 1:k){
+  m <- lm(formula(m0) , data=df[1:(n-i), ])
+  pred.dat <- expand.grid(ntrain=(n-i), h=1:i)
+  pred.dat$obs <- df[(n-i+1):n, all.vars(formula(m0))[1], drop=T]
+  pred.dat$fit.mod <- predict(m, newdata=df[(n-i+1):n, ])
+  pred.dat$fit.naive <- mean(df[1:(n-i), all.vars(formula(m0))[1], drop=T], na.rm=T) # naive prediction based on overall mean
+  pred.dat$e.mod <- abs(pred.dat$obs-pred.dat$fit.mod)
+  pred.dat$e.naive <- abs(pred.dat$obs-pred.dat$fit.naive)
+  out.pred1 <- rbind(out.pred1, pred.dat)
+}
+
+out.pred1 <- out.pred1 %>% 
+  mutate(hclass= cut(h, breaks=c(0, 3, 6, 15)),
+         hterm=cut(h, breaks=c(0, 3, 6, 15), labels=c("short (1-3)", "medium (4-6)","long (7-15)")))
+
+# summarise by ntrain (nb years for training)
+
+res.ntrain <- out.pred1 %>% 
+  group_by(ntrain) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+
+p <- ggplot(res.ntrain, aes(ntrain, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Nb years training dataset")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# summarise by h (prediction time horizon) 
+
+res.h <- out.pred1 %>% 
+  group_by(h) %>% 
+  summarise(n=n(), 
+            relmae=mean(abs(e.mod))/mean(abs(e.naive)))
+res.h
+
+print(paste("Simple average of MAE by h", mean(res.h$relmae)))
+print(paste("Weighted average of MAE by h", weighted.mean(res.h$relmae, w=1/res.h$n)))
+
+p <- ggplot(res.h, aes(h, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  geom_hline(yintercept=weighted.mean(res.h$relmae, w=1/res.h$n), col=2, lty=2)+
+  scale_x_continuous(breaks=seq(1, 15))+
+  xlab("Time horizon (years)")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# overall MAE (weighted)
+
+aux <- out.pred1 %>% 
+  group_by(h) %>% 
+  mutate(n=n()) %>% 
+  ungroup() %>% 
+  summarise(relmae=mean(e.mod) / mean(e.naive),
+            relmae.wt=weighted.mean(e.mod, w=1/n) / weighted.mean(e.naive, w=1/n))
+
+print(paste("Ratio of unweighted MAEs", aux$relmae))
+print(paste("Ratio of weighted MAEs", aux$relmae.wt))
+
+# summarise by hclass or hterm (grouped time horizons: short, medium, long)
+
+res.hterm <- out.pred1 %>% 
+  group_by(hterm) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+res.hterm
+
+p <- ggplot(res.hterm, aes(hterm, relmae))+
+  geom_bar(stat="identity", fill="grey")+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Time horizon classes")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+```
+
+## For weight-at-age 2
+
+```{r, echo=F}
+m0 <- lm(logw2 ~ logssb + oisst, data=df) # m2c
+
+summary(m0)
+
+n <- nrow(df) # number of data points used in the model fit
+
+k <- min(floor(n/2), 15) # number of years to be removed, ensure we have at last half of the data for the model fit
+
+out.pred2 <- NULL # initialise vector to store results
+
+for (i in 1:k){
+  m <- lm(formula(m0) , data=df[1:(n-i), ])
+  pred.dat <- expand.grid(ntrain=(n-i), h=1:i)
+  pred.dat$obs <- df[(n-i+1):n, all.vars(formula(m0))[1], drop=T]
+  pred.dat$fit.mod <- predict(m, newdata=df[(n-i+1):n, ])
+  pred.dat$fit.naive <- mean(df[1:(n-i), all.vars(formula(m0))[1], drop=T], na.rm=T) # naive prediction based on overall mean
+  pred.dat$e.mod <- abs(pred.dat$obs-pred.dat$fit.mod)
+  pred.dat$e.naive <- abs(pred.dat$obs-pred.dat$fit.naive)
+  out.pred2 <- rbind(out.pred2, pred.dat)
+}
+
+out.pred2 <- out.pred2 %>% 
+  mutate(hclass= cut(h, breaks=c(0, 3, 6, 15)),
+         hterm=cut(h, breaks=c(0, 3, 6, 15), labels=c("short (1-3)", "medium (4-6)","long (7-15)")))
+
+# summarise by ntrain (nb years for training)
+
+res.ntrain <- out.pred2 %>% 
+  group_by(ntrain) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+
+p <- ggplot(res.ntrain, aes(ntrain, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Nb years training dataset")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# summarise by h (prediction time horizon) 
+
+res.h <- out.pred2 %>% 
+  group_by(h) %>% 
+  summarise(n=n(), 
+            relmae=mean(abs(e.mod))/mean(abs(e.naive)))
+res.h
+
+print(paste("Simple average of MAE by h", mean(res.h$relmae)))
+print(paste("Weighted average of MAE by h", weighted.mean(res.h$relmae, w=1/res.h$n)))
+
+p <- ggplot(res.h, aes(h, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  geom_hline(yintercept=weighted.mean(res.h$relmae, w=1/res.h$n), col=2, lty=2)+
+  scale_x_continuous(breaks=seq(1, 15))+
+  xlab("Time horizon (years)")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# overall MAE (weighted)
+
+aux <- out.pred2 %>% 
+  group_by(h) %>% 
+  mutate(n=n()) %>% 
+  ungroup() %>% 
+  summarise(relmae=mean(e.mod) / mean(e.naive),
+            relmae.wt=weighted.mean(e.mod, w=1/n) / weighted.mean(e.naive, w=1/n))
+
+print(paste("Ratio of unweighted MAEs", aux$relmae))
+print(paste("Ratio of weighted MAEs", aux$relmae.wt))
+
+# summarise by hclass or hterm (grouped time horizons: short, medium, long)
+
+res.hterm <- out.pred2 %>% 
+  group_by(hterm) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+res.hterm
+
+p <- ggplot(res.hterm, aes(hterm, relmae))+
+  geom_bar(stat="identity", fill="grey")+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Time horizon classes")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+```
+
+## For weight-at-age 3+
+
+```{r, echo=F}
+m0 <- lm(logw3 ~ logssb + oisst, data=df) # m3c
+
+summary(m0)
+
+n <- nrow(df) # number of data points used in the model fit
+
+k <- min(floor(n/2), 15) # number of years to be removed, ensure we have at last half of the data for the model fit
+
+out.pred3 <- NULL # initialise vector to store results
+
+for (i in 1:k){
+  m <- lm(formula(m0) , data=df[1:(n-i), ])
+  pred.dat <- expand.grid(ntrain=(n-i), h=1:i)
+  pred.dat$obs <- df[(n-i+1):n, all.vars(formula(m0))[1], drop=T]
+  pred.dat$fit.mod <- predict(m, newdata=df[(n-i+1):n, ])
+  pred.dat$fit.naive <- mean(df[1:(n-i), all.vars(formula(m0))[1], drop=T], na.rm=T) # naive prediction based on overall mean
+  pred.dat$e.mod <- abs(pred.dat$obs-pred.dat$fit.mod)
+  pred.dat$e.naive <- abs(pred.dat$obs-pred.dat$fit.naive)
+  out.pred3 <- rbind(out.pred3, pred.dat)
+}
+
+out.pred3 <- out.pred3 %>% 
+  mutate(hclass= cut(h, breaks=c(0, 3, 6, 15)),
+         hterm=cut(h, breaks=c(0, 3, 6, 15), labels=c("short (1-3)", "medium (4-6)","long (7-15)")))
+
+# summarise by ntrain (nb years for training)
+
+res.ntrain <- out.pred3 %>% 
+  group_by(ntrain) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+
+p <- ggplot(res.ntrain, aes(ntrain, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Nb years training dataset")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# summarise by h (prediction time horizon) 
+
+res.h <- out.pred3 %>% 
+  group_by(h) %>% 
+  summarise(n=n(), 
+            relmae=mean(abs(e.mod))/mean(abs(e.naive)))
+res.h
+
+print(paste("Simple average of MAE by h", mean(res.h$relmae)))
+print(paste("Weighted average of MAE by h", weighted.mean(res.h$relmae, w=1/res.h$n)))
+
+p <- ggplot(res.h, aes(h, relmae))+
+  geom_point(cex=2)+
+  geom_line()+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  geom_hline(yintercept=weighted.mean(res.h$relmae, w=1/res.h$n), col=2, lty=2)+
+  scale_x_continuous(breaks=seq(1, 15))+
+  xlab("Time horizon (years)")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+# overall MAE (weighted)
+
+aux <- out.pred3 %>% 
+  group_by(h) %>% 
+  mutate(n=n()) %>% 
+  ungroup() %>% 
+  summarise(relmae=mean(e.mod) / mean(e.naive),
+            relmae.wt=weighted.mean(e.mod, w=1/n) / weighted.mean(e.naive, w=1/n))
+
+print(paste("Ratio of unweighted MAEs", aux$relmae))
+print(paste("Ratio of weighted MAEs", aux$relmae.wt))
+
+# summarise by hclass or hterm (grouped time horizons: short, medium, long)
+
+res.hterm <- out.pred3 %>% 
+  group_by(hterm) %>% 
+  summarise(relmae=mean(abs(e.mod))/mean(abs(e.naive)) )
+res.hterm
+
+p <- ggplot(res.hterm, aes(hterm, relmae))+
+  geom_bar(stat="identity", fill="grey")+
+  expand_limits(y=0)+
+  geom_hline(yintercept=1, col=2, lty=2)+
+  xlab("Time horizon classes")+
+  ylab(expression(rMAE=MAE[mod]/MAE[naive]))
+print(p)
+
+```
+
+
+# Save objects
+
+```{r}
+dir.create("results")
+saveRDS(df, file=file.path("results","wage_data_ane.rds"))
+save(m0def, m1c, m2c, m3c, file=file.path("results","wage_model_ane.RData"))
+save(out.pred, out.pred1, out.pred2, out.pred3, file=file.path("results","output_predskill_wage.RData"))
+```
+

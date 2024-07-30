@@ -1,0 +1,465 @@
+---
+title: "Bias correction for temperature (NEMO-MEDUSA and POLCOMS-ERSEM)"
+author: "L. Ibaibarriaga"
+date:   "`r format(Sys.time(), '%d %B, %Y')`" 
+output:
+  html_document:
+  toc: true
+  toc_depth: 2
+fig_caption: true
+---
+
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=F, message=F, fig.width = 12)
+```
+
+```{r, echo=F}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(GGally)
+library(ggcorrplot)
+
+library(qmap) # quantile mapping
+
+theme_set(theme_bw(base_size=16))
+```
+
+The anchovy growth model was fitted to temperature data from National Oceanic and Atmospheric Administration (NOAA)
+Optimum interpolation 0.25° daily sea surface temperature analysis (oiSST version 2.1). Data were averaged in bottom depths
+below 500 m based on GEBCO Compilation Group (2022) bathymetry data, within the quadrangle defined by the coordinates 6ºW
+43ºN and 0ºW 47ºN.
+
+For the FLBEIA simulations we need temperature data under RCP scenarios. The available data are from POLCOMS-ERSEM (RCP 4.5 and RCP 8.5) and NEMO-MEDUSA (RCP 8.5). The POLCOMS-ERSME data were sent by Morgane Travers for the reanalysis period and downloaded from [here](https://cds.climate.copernicus.eu/cdsapp#!/dataset/sis-marine-properties?tab=overview) for the projection period under the two carbon emission scenarios. The NEMO-MEDUSA data were provided by Jack Maverick and Michael Heath. 
+
+The bias correction was based on the tutorial by Bernhard Kuehn [here](https://figshare.com/articles/software/Tutorial_-_Ways_to_bias_correct_climate_projections/23514618), but was applied to the whole time series, without taking into account the monthly and spatial dimension of the original data. This assumption 
+
+# load environmental data
+
+```{r}
+# environmental data from ORAS5: 1958-2022
+
+oras <- readRDS("C:/Use/GitHub/ices-tools-dev/SEAwise/SEAwise_T3.3/data/env/ORAS5_AnnualTEMPByDemPelStock2.RDS")
+oras <- subset(oras, select=c("year", "ane.27.8"))
+names(oras) <- c("year","oras5")
+
+ggplot(oras, aes(year, oras5))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(method="lm", col="grey")
+
+# environmental data from Fernando OISST: 1981-2022
+
+doisst <- readRDS(file.path("env_data_fernando","doisst.rds"))
+doisst$tosa = with( doisst, ( tosWinter + tosSpring + tosSummer + tosAutumn ) / 4.0 )
+doisst = doisst[ c( 'y', 'tosa' ) ]
+names(doisst) <- c("year","oisst")
+
+ggplot(doisst, aes(year, oisst))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(method="lm", col="grey")
+
+# environmental data from NEMO-MEDUSA: 1980-2099 (RCP 8.5)
+
+aux <- load("C:/Use/proyectos/IM-21-SEAWISE/wp3/env_nemomedusa/NM_series.RData") 
+nemomed <- get(aux[[1]])
+rm(aux)
+
+nemomed <- subset(nemomed, select=c("Year", "Quarter","YQ","Strata","T0")) %>% 
+  filter(Strata %in% c("8.a","8.b","8.c","8.d","8.e")) %>% 
+  mutate(Year=as.numeric(Year),
+         Quarter=as.numeric(Quarter))
+
+ggplot(nemomed, aes(YQ, T0, group=Strata, col=Strata))+
+  geom_line()+
+  geom_point()+
+  facet_grid(~Strata)+
+  geom_smooth(method="lm", col="grey")
+
+nemomed <- nemomed %>% 
+  group_by(Year) %>% 
+  summarise(T0=mean(T0)) %>% 
+  rename(year=Year,
+         nm85=T0)
+
+ggplot(nemomed, aes(year, nm85))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(method="lm", col="grey")
+
+# environmental data from NEMO-MEDUSA: 1980-2099 (RCP 8.5)
+
+polcoms.rcp45 <- readRDS("C:/Use/proyectos/IM-21-SEAWISE/wp3/env_polcoms_ersem_sst_proj/POLCOMS_sst_spt45.RDS")
+polcoms.rcp45 <- as.data.frame(polcoms.rcp45)
+names(polcoms.rcp45) <- c("year","pe45")
+polcoms.rcp45$pe45 <- as.numeric(polcoms.rcp45$pe45)
+
+polcoms.rcp85 <- readRDS("C:/Use/proyectos/IM-21-SEAWISE/wp3/env_polcoms_ersem_sst_proj/POLCOMS_sst_spt85.RDS")
+polcoms.rcp85 <- as.data.frame(polcoms.rcp85)
+names(polcoms.rcp85) <- c("year","pe85")
+polcoms.rcp85$pe85 <- as.numeric(polcoms.rcp85$pe85)
+
+# check year ranges without NA's
+
+range(doisst$year[!is.na(doisst$oisst)])
+range(oras$year[!is.na(oras$oras5)])
+range(nemomed$year[!is.na(nemomed$nm85)])
+range(polcoms.rcp45$year[!is.na(polcoms.rcp45$pe45)])
+range(polcoms.rcp85$year[!is.na(polcoms.rcp85$pe85)])
+
+# merge all the temperatures, remove 1981 (missing oisst)
+
+temp.dat <- merge(doisst, oras, by="year", all=T)
+temp.dat <- merge(temp.dat, nemomed, by="year", all=T)
+temp.dat <- merge(temp.dat, polcoms.rcp45, by="year", all=T)
+temp.dat <- merge(temp.dat, polcoms.rcp85, by="year", all=T)
+temp.dat <- subset(temp.dat, year>=1980) # remove past oras data 
+
+```
+
+We compare the temperatures from the different data sources
+
+```{r, eval=T}
+
+# long format for ggplot plotting
+
+temp.datl <- pivot_longer(temp.dat, cols=c("oras5","oisst","nm85","pe45","pe85"), names_to="source")
+
+ggplot(temp.datl, aes(year, value, col=source, group=source))+
+  geom_point()+
+  geom_line()+
+  ylab("Temperature (ºC)")+
+  xlab("")
+
+ggpairs(temp.dat[, -1]) 
+
+mat <- cor(temp.dat[, -1], use="complete.obs") 
+p.mat <- cor_pmat(temp.dat[, -1])
+ggcorrplot(mat, type = "lower", lab=T, p.mat = p.mat)
+
+```
+
+# NEMO-MEDUSA
+
+## Delta-method
+
+The mean-bias correction or delta method was applied to the annual time series (not by grid-cell or by month). We use as overlap the most recent overlapping period between oisst and nemo-medusa (1982-2021).
+
+```{r}
+
+# overlapping period
+
+commonyrs <- intersect(doisst$year[!is.na(doisst$oisst)] , nemomed$year[!is.na(nemomed$nm85)])
+commonyrs
+
+# calculate bias
+bias <- mean(temp.dat$nm85[temp.dat$year %in% commonyrs]) - mean(temp.dat$oisst[temp.dat$year %in% commonyrs]) # equivalent to mean(temp.dat$nm85 -temp.dat$oisst)
+bias
+
+ggplot(temp.dat, aes(year, nm85-oisst)) + 
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=0, lty=2)+
+  geom_hline(yintercept=bias, col=2)+
+  geom_smooth(method="lm", col="grey")
+
+# correct time series
+
+temp.dat$nm85.bias.rm <- temp.dat$nm85 - bias
+nemomed$nm85.bias.rm <- nemomed$nm85 - bias
+
+# plots
+
+plot(nemomed$year, nemomed$nm85.bias.rm, type="o", pch=19, col=4, xlab="", ylab="Temperature (ºC)")
+lines(nemomed$year, nemomed$nm85, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","NM RCP8.5","NM RCP8.5 bias corr"), lty=1, pch=19, col=c(1,3,4))
+
+```
+
+# Quantile mapping method
+
+Following the steps suggested in the tutorial:
+
+1. decide on a time period to base the quantile mapping on - aka the ‘correction time period’ (normally the mutually overlapping period between historical data and projections, e.g. 2006 - 2020 or overlap between historical part and a control run)
+2. remove the individual trends from both the historical part and projection in this ‘correction time period’
+3. perform Quantile mapping on this trend-corrected data
+4. remove the trend from the whole projection period (e.g. 2006 - 2100)
+5. apply this fitted Qmap-model to this trend corrected data for the whole projection period
+6. calculate the mean-bias (same as for the delta correction method above) for the chosen ‘correction time period’
+add everything back together: the qmapped-projection - the mean bias + the projection trend
+
+For step 2 and 3, one could use also the trend corrected data of the whole projection period and skip step 4. 
+
+```{r}
+# overlapping period
+
+commonyrs <- intersect(doisst$year[!is.na(doisst$oisst)] , nemomed$year[!is.na(nemomed$nm85)])
+commonyrs
+
+# detrend the past time series
+
+m.oisst <- lm(oisst ~ year, data=temp.dat)
+m.nm <- lm(nm85 ~ year, data=nemomed) # detrend the whole time series
+
+temp.dat$oisst.detrend <- temp.dat$oisst - predict(m.oisst)
+temp.dat$nm85.detrend <- temp.dat$nm85 - predict(m.nm, newdata=temp.dat)
+nemomed$nm85.detrend <- nemomed$nm85 - predict(m.nm)
+
+# bias (same as above)
+bias <- mean(temp.dat$nm85[temp.dat$year %in% commonyrs]) - mean(temp.dat$oisst[temp.dat$year %in% commonyrs]) 
+
+# quantile mapping on detrended data
+
+plot(ecdf(temp.dat$oisst.detrend[temp.dat$year %in% commonyrs]), verticals=T)
+lines(ecdf(temp.dat$nm85.detrend[temp.dat$year %in% commonyrs]), col=2, verticals=T)
+
+# fitQmap identifyes the parameters of different quantile mapping methods
+# doQmap performs quantile mapping using previously defined parameters
+
+qmap <- fitQmap(obs = temp.dat$oisst.detrend[temp.dat$year %in% commonyrs],
+               mod = temp.dat$nm85.detrend[temp.dat$year %in% commonyrs],
+               method = "RQUANT",
+               wet.day = F)
+out <- doQmap(x = nemomed$nm85.detrend, fobj = qmap, type = "linear2") 
+
+# reconstruct series
+nemomed$nm85.qmap <- out - bias + predict(m.nm, data=nemomed)
+temp.dat$nm85.qmap <- nemomed$nm85.qmap[match(temp.dat$year, nemomed$year)]
+
+# plot
+
+plot(temp.dat$year, temp.dat$nm85.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$nm85, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","NM RCP 8.5","NM RCP 8.5 qmap"), lty=1, pch=19, col=c(1,3,2))
+```
+
+## Comparison of the two bias correction methods
+
+In this case both methods give similar results:
+
+```{r}
+plot(temp.dat$year, temp.dat$nm85.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$nm85, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$nm85.bias.rm, type="o", pch=19, col=4)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","NM RCP 8.5","NM RCP 8.5 bias corr","NM RCP 8.5 qmap"), lty=1, pch=19, col=c(1,3,4,2))
+```
+
+# POLCOMS-ERSEM RCP 4.5
+
+## Delta-method
+
+The mean-bias correction or delta method was applied to the annual time series (not by grid-cell or by month). We use as overlap the most recent overlapping period between oisst and polcoms (2006-2021).
+
+```{r}
+
+# overlapping period
+
+commonyrs <- intersect(doisst$year[!is.na(doisst$oisst)] , polcoms.rcp45$year[!is.na(polcoms.rcp45$pe45)])
+commonyrs
+
+# calculate bias
+bias <- mean(temp.dat$pe45[temp.dat$year %in% commonyrs]) - mean(temp.dat$oisst[temp.dat$year %in% commonyrs]) 
+bias
+
+ggplot(temp.dat, aes(year, pe45-oisst)) + 
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=0, lty=2)+
+  geom_hline(yintercept=bias, col=2)+
+  geom_smooth(method="lm", col="grey")
+
+# correct time series
+
+temp.dat$pe45.bias.rm <- temp.dat$pe45 - bias
+polcoms.rcp45$pe45.bias.rm <- polcoms.rcp45$pe45 - bias
+
+# plots
+
+plot(temp.dat$year, temp.dat$pe45.bias.rm, type="o", pch=19, col=4, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$pe45, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP4.5","PE RCP4.5 bias corr"), lty=1, pch=19, col=c(1,3,4))
+
+```
+
+# Quantile mapping method
+
+Following the steps suggested in the tutorial as before for NEMO-MEDUSA data. 
+
+```{r}
+# overlapping period
+
+commonyrs <- intersect(doisst$year[!is.na(doisst$oisst)] , polcoms.rcp45$year[!is.na(polcoms.rcp45$pe45)])
+commonyrs
+
+# detrend the past time series
+
+m.oisst <- lm(oisst ~ year, data=temp.dat)
+m.pe45 <- lm(pe45 ~ year, data=polcoms.rcp45) # detrend the whole time series
+
+temp.dat$oisst.detrend <- temp.dat$oisst - predict(m.oisst)
+temp.dat$pe45.detrend <- temp.dat$pe45 - predict(m.pe45, newdata=temp.dat)
+polcoms.rcp45$pe45.detrend <- polcoms.rcp45$pe45 - predict(m.pe45)
+
+# bias (same as above)
+bias <- mean(temp.dat$pe45[temp.dat$year %in% commonyrs]) - mean(temp.dat$oisst[temp.dat$year %in% commonyrs]) 
+bias
+
+# quantile mapping on detrended data
+
+plot(ecdf(temp.dat$oisst.detrend[temp.dat$year %in% commonyrs]), verticals=T)
+lines(ecdf(temp.dat$pe45.detrend[temp.dat$year %in% commonyrs]), col=2, verticals=T)
+
+# fitQmap identifyes the parameters of different quantile mapping methods
+# doQmap performs quantile mapping using previously defined parameters
+
+qmap <- fitQmap(obs = temp.dat$oisst.detrend[temp.dat$year %in% commonyrs],
+               mod = temp.dat$pe45.detrend[temp.dat$year %in% commonyrs],
+               method = "RQUANT",
+               wet.day = F)
+out <- doQmap(x = polcoms.rcp45$pe45.detrend, fobj = qmap, type = "linear2") 
+
+# reconstruct series
+polcoms.rcp45$pe45.qmap <- out - bias + predict(m.pe45, data=polcoms.rcp45)
+temp.dat$pe45.qmap <- polcoms.rcp45$pe45.qmap[match(temp.dat$year, polcoms.rcp45$year)]
+
+# plot
+
+plot(temp.dat$year, temp.dat$pe45.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$pe45, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP 4.5","PE RCP 4.5 qmap"), lty=1, pch=19, col=c(1,3,2))
+```
+
+## Comparison of the two bias correction methods
+
+In this case both methods give similar results:
+
+```{r}
+plot(temp.dat$year, temp.dat$pe45.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$pe45, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$pe45.bias.rm, type="o", pch=19, col=4)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP 4.5","PE RCP 4.5 bias corr","PE RCP 4.5 qmap"), lty=1, pch=19, col=c(1,3,4,2))
+```
+
+# POLCOMS-ERSEM RCP 8.5
+
+## Delta-method
+
+The mean-bias correction or delta method was applied to the annual time series (not by grid-cell or by month). We use as overlap the most recent overlapping period between oisst and polcoms (2006-2021).
+
+```{r}
+
+# overlapping period
+
+commonyrs <- intersect(doisst$year[!is.na(doisst$oisst)] , polcoms.rcp85$year[!is.na(polcoms.rcp85$pe85)])
+commonyrs
+
+# calculate bias
+bias <- mean(temp.dat$pe85[temp.dat$year %in% commonyrs]) - mean(temp.dat$oisst[temp.dat$year %in% commonyrs]) 
+bias
+
+ggplot(temp.dat, aes(year, pe85-oisst)) + 
+  geom_line()+
+  geom_point()+
+  geom_hline(yintercept=0, lty=2)+
+  geom_hline(yintercept=bias, col=2)+
+  geom_smooth(method="lm", col="grey")
+
+# correct time series
+
+temp.dat$pe85.bias.rm <- temp.dat$pe85 - bias
+polcoms.rcp85$pe85.bias.rm <- polcoms.rcp85$pe85 - bias
+
+# plots
+
+plot(temp.dat$year, temp.dat$pe85.bias.rm, type="o", pch=19, col=4, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$pe85, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP8.5","PE RCP8.5 bias corr"), lty=1, pch=19, col=c(1,3,4))
+
+```
+
+# Quantile mapping method
+
+Following the steps suggested in the tutorial as before for NEMO-MEDUSA data. 
+
+```{r}
+# overlapping period
+
+commonyrs <- intersect(doisst$year[!is.na(doisst$oisst)] , polcoms.rcp85$year[!is.na(polcoms.rcp85$pe85)])
+commonyrs
+
+# detrend the past time series
+
+m.oisst <- lm(oisst ~ year, data=temp.dat)
+m.pe85 <- lm(pe85 ~ year, data=polcoms.rcp85) # detrend the whole time series
+
+temp.dat$oisst.detrend <- temp.dat$oisst - predict(m.oisst)
+temp.dat$pe85.detrend <- temp.dat$pe85 - predict(m.pe85, newdata=temp.dat)
+polcoms.rcp85$pe85.detrend <- polcoms.rcp85$pe85 - predict(m.pe85)
+
+# bias (same as above)
+bias <- mean(temp.dat$pe85[temp.dat$year %in% commonyrs]) - mean(temp.dat$oisst[temp.dat$year %in% commonyrs]) 
+bias
+
+# quantile mapping on detrended data
+
+plot(ecdf(temp.dat$oisst.detrend[temp.dat$year %in% commonyrs]), verticals=T)
+lines(ecdf(temp.dat$pe85.detrend[temp.dat$year %in% commonyrs]), col=2, verticals=T)
+
+# fitQmap identifyes the parameters of different quantile mapping methods
+# doQmap performs quantile mapping using previously defined parameters
+
+qmap <- fitQmap(obs = temp.dat$oisst.detrend[temp.dat$year %in% commonyrs],
+               mod = temp.dat$pe85.detrend[temp.dat$year %in% commonyrs],
+               method = "RQUANT",
+               wet.day = F)
+out <- doQmap(x = polcoms.rcp85$pe85.detrend, fobj = qmap, type = "linear2") 
+
+# reconstruct series
+polcoms.rcp85$pe85.qmap <- out - bias + predict(m.pe85, data=polcoms.rcp85)
+temp.dat$pe85.qmap <- polcoms.rcp85$pe85.qmap[match(temp.dat$year, polcoms.rcp85$year)]
+
+# plot
+
+plot(temp.dat$year, temp.dat$pe85.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$pe85, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP 8.5","PE RCP 8.5 qmap"), lty=1, pch=19, col=c(1,3,2))
+```
+
+## Comparison of the two bias correction methods
+
+In this case both methods give similar results:
+
+```{r}
+plot(temp.dat$year, temp.dat$pe85.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)")
+lines(temp.dat$year, temp.dat$pe85, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$pe85.bias.rm, type="o", pch=19, col=4)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP 8.5","PE RCP 8.5 bias corr","PE RCP 8.5 qmap"), lty=1, pch=19, col=c(1,3,4,2))
+```
+# Final temperature scenarios
+
+```{r}
+plot(temp.dat$year, temp.dat$pe85.qmap, type="o", pch=19, col=2, xlab="", ylab="Temperature (ºC)", ylim=c(14,21))
+lines(temp.dat$year, temp.dat$pe45.qmap, type="o", pch=19, col=3)
+lines(temp.dat$year, temp.dat$nm85.qmap, type="o", pch=19, col=4)
+lines(temp.dat$year, temp.dat$oisst, type="o", pch=19, col=1)
+legend("topleft", c("OISST","PE RCP 8.5 qmap", "PE RCP 4.5 qmap", "NM RCP 8.5 qmap"), lty=1, pch=19, col=c(1,2,3,4))
+
+```
+
+# Save results
+
+```{r}
+names(temp.dat)
+saveRDS(temp.dat, file="sst_projection.RDS")
+```

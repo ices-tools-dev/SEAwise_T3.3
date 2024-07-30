@@ -1,0 +1,355 @@
+---
+title: "Include uncertainty in temperature (NEMO-MEDUSA and POLCOMS-ERSEM)"
+author: "L. Ibaibarriaga"
+date:   "`r format(Sys.time(), '%d %B, %Y')`" 
+output:
+  html_document:
+  toc: true
+  toc_depth: 2
+fig_caption: true
+---
+
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=F, message=F, fig.width = 12)
+```
+
+```{r, echo=F}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(FLCore)
+theme_set(theme_bw(base_size=16))
+```
+
+# read bias-corrected future temperature data
+
+We read the bias-corrected future temperature data generated in the previous markdown (`2_code_biascorrection_env`)
+
+```{r}
+# read data 
+
+temp.dat <- readRDS(file="sst_projection.RDS")
+summary(temp.dat)
+
+# first year of the FLBEIA simulations
+
+yr.first <- 2022
+
+# create centered year variable
+
+temp.dat$year.cent <- temp.dat$year - yr.first
+
+# number of simulations
+
+nit <- 1000
+
+```
+
+# Include uncertainty
+
+Given that we only have one time series for each of the scenarios, we simulate the uncertainty around each of the time-series as a linear trend + AR(1)
+
+Note that if we have an AR(1) process: 
+
+$$y_{t}=b y_{t-1} + u_t$$
+where $u_t \sim N(0, \sigma^2)$, then:
+
+$$Var(y_t)=b^2 Var(y_{t-1}) + Var(u_t)$$
+And it follows that: 
+
+$$Var(y_t)=\frac{\sigma^2}{1-b^2}$$
+
+
+## POLCOMS-ERSEM RCP 8.5
+
+2006-2099
+
+```{r}
+
+# index identifying non-NA values
+idx <- which(!is.na(temp.dat$pe85.qmap))
+
+# linear trend
+# we use the alternative parameterization of year so that the reference year is yr.first
+
+m0 <- lm(pe85.qmap ~ year.cent, data=temp.dat[idx, ])
+summary(m0)
+plot(m0)
+plot(acf(resid(m0)))
+plot(pacf(resid(m0)))
+
+# using year we get the same results
+
+m0b <- lm(pe85.qmap ~ year, data=temp.dat[idx, ])
+coef(m0b)
+
+# linear trend + AR(1)
+# using the alternative parameterization
+
+m1 <- arima(temp.dat$pe85.qmap[idx], order=c(1,0,0), xreg=temp.dat$year.cent[idx])
+print(m1)
+
+# linear trend + AR(1)
+# using year we get the same results
+
+m1b <- arima(temp.dat$pe85.qmap[idx], order=c(1,0,0), xreg=temp.dat$year[idx])
+print(m1b)
+
+# simulate (1 iteration) from linear trend + AR(1)
+
+pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])), sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+
+pred.lm <- coef(m1)["intercept"] + coef(m1)["temp.dat$year.cent[idx]"] * temp.dat$year.cent[idx]
+
+pred <- pred.lm + pred.ar1
+
+plot(temp.dat$year[idx], pred, type="l", xlab="", ylab="", main="POLCOMS-ERSEM RCP 8.5")
+lines(temp.dat$year[idx], temp.dat$pe85.qmap[idx], col=2)
+abline( coef(m0b), col=4)
+abline(coef(m1b)[c("intercept", "temp.dat$year[idx]")], col=3)
+
+# simulate (1000 iterations) from linear trend + AR(1)
+
+set.seed(444)
+
+tmp <- sapply(1:nit, function(x) {
+  pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])),
+                                   sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+  pred.lm <- coef(m1)["intercept"] + coef(m1)["temp.dat$year.cent[idx]"] * temp.dat$year.cent[idx]
+  pred <- pred.lm + pred.ar1
+  pred
+  }
+)
+
+# transform to FLQuant
+pred.temp.pe85.quant <- as.FLQuant(tmp, dim=c(1, nrow(temp.dat[idx,]),1,1,1,nit))
+dimnames(pred.temp.pe85.quant)$year <- temp.dat$year[idx]
+plot(pred.temp.pe85.quant)
+
+as.data.frame(pred.temp.pe85.quant) %>% 
+  ggplot(aes(year, data, group=year))+
+  geom_boxplot()
+
+# simulate (1000 iterations) from AR(1) NO Climate change
+
+set.seed(444)
+
+tmp <- sapply(1:nit, function(x) {
+  pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])),
+                                   sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+  pred.lm <- coef(m1)["intercept"] 
+  pred <- pred.lm + pred.ar1
+  pred
+  }
+)
+
+# transform to FLQuant
+pred.temp.pe85.nocc.quant <- as.FLQuant(tmp, dim=c(1, nrow(temp.dat[idx,]),1,1,1,nit))
+dimnames(pred.temp.pe85.nocc.quant)$year <- temp.dat$year[idx]
+plot(pred.temp.pe85.nocc.quant)
+
+as.data.frame(pred.temp.pe85.nocc.quant) %>% 
+  ggplot(aes(year, data, group=year))+
+  geom_boxplot()
+
+```
+
+## POLCOMS-ERSEM RCP 4.5
+
+2006-2099
+
+```{r}
+
+# index identifying non-NA values
+idx <- which(!is.na(temp.dat$pe45.qmap))
+
+# linear trend
+# we use the alternative parameterization of year so that the reference year is yr.first
+
+m0 <- lm(pe45.qmap ~ year.cent, data=temp.dat[idx, ])
+summary(m0)
+plot(m0)
+plot(acf(resid(m0)))
+plot(pacf(resid(m0)))
+
+# using year we get the same results
+
+m0b <- lm(pe45.qmap ~ year, data=temp.dat[idx, ])
+coef(m0b)
+
+# linear trend + AR(1)
+# using the alternative parameterization
+
+m1 <- arima(temp.dat$pe45.qmap[idx], order=c(1,0,0), xreg=temp.dat$year.cent[idx])
+print(m1)
+
+# linear trend + AR(1)
+# using year we get the same results
+
+m1b <- arima(temp.dat$pe45.qmap[idx], order=c(1,0,0), xreg=temp.dat$year[idx])
+print(m1b)
+
+# simulate (1 iteration) from linear trend + AR(1)
+
+pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])), sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+
+pred.lm <- coef(m1)["intercept"] + coef(m1)["temp.dat$year.cent[idx]"] * temp.dat$year.cent[idx]
+
+pred <- pred.lm + pred.ar1
+
+plot(temp.dat$year[idx], pred, type="l", xlab="", ylab="", main="POLCOMS-ERSEM RCP 4.5")
+lines(temp.dat$year[idx], temp.dat$pe45.qmap[idx], col=2)
+abline( coef(m0b), col=4)
+abline(coef(m1b)[c("intercept", "temp.dat$year[idx]")], col=3)
+
+# simulate (1000 iterations) from linear trend + AR(1)
+
+set.seed(444)
+
+tmp <- sapply(1:nit, function(x) {
+  pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])),
+                                   sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+  pred.lm <- coef(m1)["intercept"] + coef(m1)["temp.dat$year.cent[idx]"] * temp.dat$year.cent[idx]
+  pred <- pred.lm + pred.ar1
+  pred
+  }
+)
+
+# transform to FLQuant
+pred.temp.pe45.quant <- as.FLQuant(tmp, dim=c(1, nrow(temp.dat[idx,]),1,1,1,nit))
+dimnames(pred.temp.pe45.quant)$year <- temp.dat$year[idx]
+plot(pred.temp.pe45.quant)
+
+as.data.frame(pred.temp.pe45.quant) %>% 
+  ggplot(aes(year, data, group=year))+
+  geom_boxplot()
+
+# simulate (1000 iterations) from AR(1) NO Climate change
+
+set.seed(444)
+
+tmp <- sapply(1:nit, function(x) {
+  pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])),
+                                   sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+  pred.lm <- coef(m1)["intercept"] 
+  pred <- pred.lm + pred.ar1
+  pred
+  }
+)
+
+# transform to FLQuant
+pred.temp.pe45.nocc.quant <- as.FLQuant(tmp, dim=c(1, nrow(temp.dat[idx,]),1,1,1,nit))
+dimnames(pred.temp.pe45.nocc.quant)$year <- temp.dat$year[idx]
+plot(pred.temp.pe45.nocc.quant)
+
+as.data.frame(pred.temp.pe45.nocc.quant) %>% 
+  ggplot(aes(year, data, group=year))+
+  geom_boxplot()
+
+```
+
+## NEMO-MEDUSA RCP 8.5
+
+1980-2099
+
+```{r}
+
+# index identifying non-NA values
+idx <- which(!is.na(temp.dat$nm85.qmap))
+
+# linear trend
+# we use the alternative parameterization of year so that the reference year is yr.first
+
+m0 <- lm(nm85.qmap ~ year.cent, data=temp.dat[idx, ])
+summary(m0)
+plot(m0)
+plot(acf(resid(m0)))
+plot(pacf(resid(m0)))
+
+# using year we get the same results
+
+m0b <- lm(nm85.qmap ~ year, data=temp.dat[idx, ])
+coef(m0b)
+
+# linear trend + AR(1)
+# using the alternative parameterization
+
+m1 <- arima(temp.dat$nm85.qmap[idx], order=c(1,0,0), xreg=temp.dat$year.cent[idx])
+print(m1)
+
+# linear trend + AR(1)
+# using year we get the same results
+
+m1b <- arima(temp.dat$nm85.qmap[idx], order=c(1,0,0), xreg=temp.dat$year[idx])
+print(m1b)
+
+# simulate (1 iteration) from linear trend + AR(1)
+
+pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])), sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+
+pred.lm <- coef(m1)["intercept"] + coef(m1)["temp.dat$year.cent[idx]"] * temp.dat$year.cent[idx]
+
+pred <- pred.lm + pred.ar1
+
+plot(temp.dat$year[idx], pred, type="l", xlab="", ylab="", main="NEMO-MEDUSA RCP 8.5")
+lines(temp.dat$year[idx], temp.dat$nm85.qmap[idx], col=2)
+abline( coef(m0b), col=4)
+abline(coef(m1b)[c("intercept", "temp.dat$year[idx]")], col=3)
+
+# simulate (1000 iterations) from linear trend + AR(1)
+
+set.seed(444)
+
+tmp <- sapply(1:nit, function(x) {
+  pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])),
+                                   sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+  pred.lm <- coef(m1)["intercept"] + coef(m1)["temp.dat$year.cent[idx]"] * temp.dat$year.cent[idx]
+  pred <- pred.lm + pred.ar1
+  pred
+  }
+)
+
+# transform to FLQuant
+pred.temp.nm85.quant <- as.FLQuant(tmp, dim=c(1, nrow(temp.dat[idx,]),1,1,1,nit))
+dimnames(pred.temp.nm85.quant)$year <- temp.dat$year[idx]
+plot(pred.temp.nm85.quant)
+
+as.data.frame(pred.temp.nm85.quant) %>% 
+  ggplot(aes(year, data, group=year))+
+  geom_boxplot()
+
+# simulate (1000 iterations) from AR(1) NO Climate change
+
+set.seed(444)
+
+tmp <- sapply(1:nit, function(x) {
+  pred.ar1 <- arima.sim(model=list(order = c(1,0,0), ar = c(coef(m1)["ar1"])),
+                                   sd=sqrt(m1$sigma2), n=nrow(temp.dat[idx,]))
+  pred.lm <- coef(m1)["intercept"] 
+  pred <- pred.lm + pred.ar1
+  pred
+  }
+)
+
+# transform to FLQuant
+pred.temp.nm85.nocc.quant <- as.FLQuant(tmp, dim=c(1, nrow(temp.dat[idx,]),1,1,1,nit))
+dimnames(pred.temp.nm85.nocc.quant)$year <- temp.dat$year[idx]
+plot(pred.temp.nm85.nocc.quant)
+
+as.data.frame(pred.temp.nm85.nocc.quant) %>% 
+  ggplot(aes(year, data, group=year))+
+  geom_boxplot()
+
+```
+
+# Save dataset
+
+```{r, eval=T}
+saveRDS(pred.temp.pe85.quant, file="results/temp_pe85_projection_1000it.RDS")
+saveRDS(pred.temp.pe85.nocc.quant, file="results/temp_pe85_nocc_projection_1000it.RDS")
+saveRDS(pred.temp.pe45.quant, file="results/temp_pe45_projection_1000it.RDS")
+saveRDS(pred.temp.pe45.nocc.quant, file="results/temp_pe45_nocc_projection_1000it.RDS")
+saveRDS(pred.temp.nm85.quant, file="results/temp_nm85_projection_1000it.RDS")
+saveRDS(pred.temp.nm85.nocc.quant, file="results/temp_nm85_nocc_projection_1000it.RDS")
+```

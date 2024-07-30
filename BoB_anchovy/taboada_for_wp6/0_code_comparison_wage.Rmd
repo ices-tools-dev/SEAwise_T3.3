@@ -1,0 +1,76 @@
+---
+title: "Comparison of weight-at-age data used in FLBEIA and in Taboada"
+author: "L. Ibaibarriaga and S. Sanchez-Maroño"
+date:   "`r format(Sys.time(), '%d %B, %Y')`" 
+output:
+  html_document:
+  toc: true
+  toc_depth: 2
+fig_caption: true
+---
+
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=F, message=F, fig.width = 12)
+```
+
+```{r, echo=F}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+theme_set(theme_bw(base_size=16))
+```
+
+Weight-at-age data used in Taboada et al. (2023): 
+```{r}
+# load FLStock object
+
+load("C:/Use/GitHub/ices-tools-dev/SEAwise/SEAwise_T3.3/NEA/data/FLStocks_in/bob/wghansa2022_aneq.stk.RData")
+aneq.stk <- window(aneq.stk, end=2022) # remove 2023 (incomplete)
+
+# load mean weight-at-age from JUVENA
+
+dat <- read.csv(file="C:/Use/proyectos/IM-23-SIZANE/analisis/data/juvena/Bio_Juv_ANE-2003_2022.csv", header=T)
+
+dat.haul <- dat %>% 
+  group_by(y, sample, age) %>% 
+  summarise(l=mean(lmm, na.rm=T),
+            w=mean(w, na.rm=T)) %>% 
+  filter(!is.na(age))
+
+dat.haul <- pivot_wider(dat.haul, names_from=age, values_from=c(l, w),  names_sep = "")
+dat.haul <- right_join(select(dat, c(lon:individual, fpw0p)), dat.haul, multiple="first") 
+dat.haul$year <- dat.haul$y
+
+dat.ts <- dat.haul %>% 
+  group_by(year) %>% 
+  summarise(w0=weighted.mean(w0, w=fpw0p, na.rm=T), 
+            l0=weighted.mean(l0, w=fpw0p, na.rm=T))
+
+# create new FLStock object with weight-at-age 0 from JUVENA
+
+aneq.stk2 <- aneq.stk 
+stock.wt(aneq.stk2["0",]) <- 0
+stock.wt(aneq.stk2["0", as.character(dat.ts$year)]) <- dat.ts$w0
+
+df <- as.data.frame(stock.wt(aneq.stk2))
+df <- subset(df, select=c("age","year","data"))
+df <- pivot_wider(df, values_from = "data", names_from="age", names_prefix="w")
+
+aneq.biol <- as(aneq.stk2, "FLBiol")
+
+df <- left_join(df, as.data.frame(ssb(aneq.biol)))
+df <- df %>% 
+  rename(ssb=data) %>% 
+  mutate(w0=ifelse(w0==0, NA, w0/1000)) %>% 
+  select(-c("age","unit","season","area","iter"))
+
+df <- df %>% 
+  mutate(logw0=log(w0),
+         logw1=log(w1),
+         logw2=log(w2),
+         logw3=log(w3),
+         logssb=log(ssb))
+
+
+```
